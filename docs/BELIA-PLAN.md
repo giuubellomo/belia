@@ -185,7 +185,7 @@ BELIA/                        # la raíz del repo es la raíz del proyecto Expo
 
   **Checkpoint:** `npx tsc --noEmit` pasa sin errores.
 
-- [ ] **0.3 — Jest sobre el dominio**
+- [x] **0.3 — Jest sobre el dominio**
 
   Configurá jest con ts-jest, limitado a `src/domain`. No necesitás jest-expo todavía:
   el dominio es TypeScript puro y se testea sin React Native.
@@ -195,10 +195,24 @@ BELIA/                        # la raíz del repo es la raíz del proyecto Expo
   nada que ver con el código.
 
   ```json
-  { "scripts": { "test": "jest", "typecheck": "tsc --noEmit" } }
+  { "scripts": { "test": "jest --passWithNoTests", "typecheck": "tsc --noEmit" } }
   ```
 
+  **`tsconfig.jest.json` aparte, que no extiende el de Expo.** El tsconfig del proyecto usa
+  `module: preserve` y `moduleResolution: bundler`, que jest no puede ejecutar, y esas dos
+  opciones no se pueden pisar de a una sin chocar con `customConditions`. Como el dominio es
+  TypeScript puro, su tsconfig de tests no necesita nada de Expo: se declara solo, con
+  `module: commonjs`, `moduleResolution: node10` y el mismo alias.
+
+  **`--passWithNoTests` es temporal.** Está para que este checkpoint pase con el dominio
+  todavía vacío. **Sacalo al terminar el paso 1.4**, cuando ya existan los tests de verdad:
+  si queda, un día alguien rompe `roots` en `jest.config.js`, no corre ni un test y `npm test`
+  igual da verde, que es justo el fallo que este proyecto no se puede permitir.
+
   **Checkpoint:** `npm test` corre y reporta 0 tests sin fallar.
+
+  Verificá además que jest realmente **typechequea**: un test que le pase un `string` a una
+  función de `number` tiene que fallar la suite con `TS2345`, no pasar transpilando.
 
 ---
 
@@ -863,3 +877,6 @@ Durante el paso 0.1 (Expo SDK 57):
 | 12 | La tabla de Stack ahora fija versiones, y se agregó «Dependencias de sostén». | `expo-linking`, `expo-constants` y `react-dom` hicieron falta y no estaban documentadas. El plan prohíbe agregar deps sin registrarlas. |
 | 13 | jest queda en `~29.7.0`, no en la 30. | `npm i -D jest` instala la última; el SDK 57 espera la 29 y `expo install --check` la rechaza. |
 | 14 | Queda escrito que **no** va `babel.config.js`. | Crearlo rompe Metro: `babel-preset-expo` vive anidado en `node_modules/expo/node_modules/`. Perdido medio paso en descubrirlo. |
+| 15 | El alias va **sin `baseUrl`** (paso 0.2). | TypeScript 6 lo deprecó: `tsc` corta con `TS5101` antes de mirar el código. La doc de Expo que lo muestra está escrita para TS 5. |
+| 16 | `tsconfig.jest.json` propio, que no extiende el de Expo (paso 0.3). | `module: preserve` + `moduleResolution: bundler` no corren en jest, y no se pisan de a una sin chocar con `customConditions`. |
+| 17 | `npm test` lleva `--passWithNoTests`, **a remover en el paso 1.4**. | Necesario para que 0 tests no falle hoy; peligroso de dejar una vez que haya tests. |
