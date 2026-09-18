@@ -183,6 +183,12 @@ BELIA/                        # la raíz del repo es la raíz del proyecto Expo
   hace falta tocar `app.json` ni `metro.config.js`. Después de cambiar `tsconfig.json` hay
   que reiniciar el server para que los tome.
 
+  **`"types": ["jest"]` hace falta.** TypeScript 6 dejó de auto-incluir los paquetes de
+  `node_modules/@types`: solo entra lo que se importa. Sin declararlo, `npm run typecheck`
+  se cae en los archivos de test con `TS2593: Cannot find name 'describe'`, aunque
+  `@types/jest` esté instalado y `npm test` pase. Aparece recién en el paso 1.2, cuando
+  existe el primer test.
+
   **Checkpoint:** `npx tsc --noEmit` pasa sin errores.
 
 - [x] **0.3 — Jest sobre el dominio**
@@ -297,7 +303,7 @@ pegar botones.
 
   **Checkpoint:** `npm run typecheck` pasa.
 
-- [ ] **1.2 — Cálculo de puntaje** (C-1, C-2, A-2)
+- [x] **1.2 — Cálculo de puntaje** (C-1, C-2, A-2)
 
   `src/domain/scoring.ts`:
 
@@ -880,3 +886,4 @@ Durante el paso 0.1 (Expo SDK 57):
 | 15 | El alias va **sin `baseUrl`** (paso 0.2). | TypeScript 6 lo deprecó: `tsc` corta con `TS5101` antes de mirar el código. La doc de Expo que lo muestra está escrita para TS 5. |
 | 16 | `tsconfig.jest.json` propio, que no extiende el de Expo (paso 0.3). | `module: preserve` + `moduleResolution: bundler` no corren en jest, y no se pisan de a una sin chocar con `customConditions`. |
 | 17 | `npm test` lleva `--passWithNoTests`, **a remover en el paso 1.4**. | Necesario para que 0 tests no falle hoy; peligroso de dejar una vez que haya tests. |
+| 18 | `tsconfig.json` declara `"types": ["jest"]` (anotado en 0.2, surge en 1.2). | TypeScript 6 no auto-incluye `node_modules/@types`. Sin eso, `typecheck` falla en los tests con `TS2593` aunque `npm test` pase. |
