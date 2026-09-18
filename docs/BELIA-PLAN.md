@@ -32,16 +32,38 @@ está escrito para que un agente (Claude Code) lo siga paso a paso, de arriba ha
 
 ## Stack
 
-| | |
-|---|---|
-| Framework | Expo (managed) + React Native |
-| Lenguaje | TypeScript, `strict: true` |
-| Navegación | expo-router (file-based) |
-| Persistencia | expo-sqlite |
-| Tests | jest + ts-jest sobre el dominio puro |
-| Pantalla activa | expo-keep-awake |
+| | | Versión instalada |
+|---|---|---|
+| Framework | Expo (managed) + React Native | `expo ~57.0.24`, `react-native 0.86.3`, `react 19.2.3` |
+| Lenguaje | TypeScript, `strict: true` | `typescript ~6.0.3` |
+| Navegación | expo-router (file-based) | `expo-router ~57.0.22` |
+| Persistencia | expo-sqlite | `expo-sqlite ~57.0.3` |
+| Tests | jest + ts-jest sobre el dominio puro | `jest ~29.7.0`, `ts-jest ^29.4.12` |
+| Pantalla activa | expo-keep-awake | `expo-keep-awake ~57.0.2` |
 
 **Sin backend, sin llamadas de red** (RNF-1). Nada de Firebase, nada de auth en la v1.
+
+### Dependencias de sostén
+
+Instaladas en el paso 0.1 porque algo del Stack las exige, no porque agreguen capacidades.
+No las saques: cada una está acá por una razón concreta.
+
+| Paquete | Versión | Por qué |
+|---|---|---|
+| `react-native-safe-area-context` | `~5.7.0` | Requisito de expo-router. |
+| `react-native-screens` | `~4.26.0` | Requisito de expo-router. |
+| `expo-linking` | `~57.0.10` | Requisito de la guía de instalación de expo-router. |
+| `expo-constants` | `~57.0.19` | Requisito de la guía de instalación de expo-router. |
+| `react-dom` | `19.2.3` | **Pineada a mano.** expo-router arrastra `react-dom@19.3.0`, que exige `react@^19.3.0`, pero el SDK 57 pinea `react@19.2.3`. Sin pinearla, todo `npm install` posterior falla con `ERESOLVE`. |
+
+**Versiones:** las manda el SDK, no npm. Antes de dar un paso por cerrado corré
+`npx expo install --check`; si se queja, `npx expo install --fix`. Por eso jest quedó en la
+29 y no en la 30: `npm i -D jest` instala la última y el SDK 57 espera `~29.7.0`.
+
+**No hay `babel.config.js`, y no lo crees.** El template de SDK 57 no lo trae a propósito:
+Expo aplica `babel-preset-expo` internamente. Si lo agregás, Metro se rompe con
+`Cannot find module 'babel-preset-expo'`, porque el preset vive anidado en
+`node_modules/expo/node_modules/` y no resuelve desde la raíz.
 
 ---
 
@@ -110,7 +132,7 @@ BELIA/                        # la raíz del repo es la raíz del proyecto Expo
 
 # Fase 0 — Andamiaje
 
-- [ ] **0.1 — Crear el proyecto**
+- [x] **0.1 — Crear el proyecto**
 
   El proyecto se crea **en la raíz del repo**, que ya existe y ya tiene `docs/` adentro.
   No lo crees en un subdirectorio: el repo y el proyecto son la misma carpeta.
@@ -131,6 +153,14 @@ BELIA/                        # la raíz del repo es la raíz del proyecto Expo
   `app.json`). No copies configuración de memoria: leé la doc de la versión que instalaste.
   `blank-typescript` no trae expo-router cableado — es trabajo tuyo y es la parte del paso
   que más fácil sale mal.
+
+  Lo que hizo falta en SDK 57, ya aplicado:
+  - `package.json`: `"main": "expo-router/entry"` (y se borran `App.tsx` e `index.ts`)
+  - `app.json`: `"scheme": "belia"` y `"experiments": { "typedRoutes": true }`
+  - `app/_layout.tsx` con un `<Stack />` y una ruta `app/index.tsx`, o el router no arranca.
+    Ese `index.tsx` es un placeholder: el Home de verdad es el paso 4.2.
+  - las dependencias de sostén de la sección Stack (`expo-linking`, `expo-constants`,
+    `react-dom` pineada)
 
   **Checkpoint:** `npx expo start` levanta y la app abre en el teléfono o en el emulador.
 
@@ -811,3 +841,11 @@ aplicado arriba; queda anotado para que se entienda por qué el plan dice lo que
 | 9 | Nota en 7.6: corregir una ronda cerrada no la vuelve `en_curso`, y re-marcar recongela el puntaje de **esa** ronda. | Era la ambigüedad más peligrosa de C-4. |
 | 10 | Nota en 8.1: sin historial, el podio se ve una sola vez. | Que sea una decisión asumida y no un descubrimiento. |
 | 11 | Nota sobre `moduleNameMapper` de ts-jest en el paso 0.3; aviso de que `blank-typescript` no trae expo-router cableado. | Dos checkpoints que fallan por razones que no tienen que ver con el código. |
+
+Durante el paso 0.1 (Expo SDK 57):
+
+| # | Cambio | Motivo |
+|---|---|---|
+| 12 | La tabla de Stack ahora fija versiones, y se agregó «Dependencias de sostén». | `expo-linking`, `expo-constants` y `react-dom` hicieron falta y no estaban documentadas. El plan prohíbe agregar deps sin registrarlas. |
+| 13 | jest queda en `~29.7.0`, no en la 30. | `npm i -D jest` instala la última; el SDK 57 espera la 29 y `expo install --check` la rechaza. |
+| 14 | Queda escrito que **no** va `babel.config.js`. | Crearlo rompe Metro: `babel-preset-expo` vive anidado en `node_modules/expo/node_modules/`. Perdido medio paso en descubrirlo. |
