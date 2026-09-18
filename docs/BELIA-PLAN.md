@@ -222,7 +222,7 @@ Esta es la fase más importante. Toda la lógica de puntaje vive acá, en funcio
 testeadas, **antes** de que exista una sola pantalla. Si esto queda bien, el resto es
 pegar botones.
 
-- [ ] **1.1 — Tipos del dominio**
+- [x] **1.1 — Tipos del dominio**
 
   `src/domain/types.ts`:
 
