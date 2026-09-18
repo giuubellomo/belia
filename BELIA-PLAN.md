@@ -1,0 +1,707 @@
+# BELIA — Guía de implementación
+
+App para anotar puntajes de juegos de cartas. Este archivo es el plan de construcción:
+está escrito para que un agente (Claude Code) lo siga paso a paso, de arriba hacia abajo.
+
+- **Especificación funcional:** los IDs `RF-xxx`, `RNF-x`, `C-x`, `D-x` y `A-x` que aparecen
+  acá refieren al documento de requerimientos de BELIA.
+- **Diseño:** el mockup es en escala de grises, estilo wireframe. Las pantallas y su
+  comportamiento están definidos en el canvas de diseño.
+
+---
+
+## Cómo usar este archivo
+
+**Reglas de trabajo. Respetalas aunque el usuario no las repita:**
+
+1. **Un paso por vez.** Hacé el paso, corré su checkpoint, contá en dos líneas qué hiciste
+   y **pará**. No encadenes pasos sin que te lo pidan.
+2. **No saltees fases.** No empieces un paso de la fase N+1 si la fase N tiene pasos sin
+   marcar.
+3. **Si un checkpoint falla, arreglalo antes de seguir.** No sigas de largo dejando algo
+   roto "para después".
+4. **No inventes ni renombres campos del modelo.** Las tablas y los tipos están fijados en
+   las fases 1 y 2. Si te parece que falta algo, pará y decilo.
+5. **Las decisiones abiertas no se resuelven solas.** Están más abajo, con una respuesta
+   provisional marcada. Si un paso te obliga a cambiar una, pará y preguntá.
+6. **Marcá el avance en este archivo.** Al terminar un paso, cambiá su `- [ ]` por `- [x]`.
+7. **Español rioplatense en toda la interfaz** (D-4). El código en inglés, los textos de
+   usuario en español, centralizados en `src/i18n/es.ts`.
+
+---
+
+## Stack
+
+| | |
+|---|---|
+| Framework | Expo (managed) + React Native |
+| Lenguaje | TypeScript, `strict: true` |
+| Navegación | expo-router (file-based) |
+| Persistencia | expo-sqlite |
+| Tests | jest + ts-jest sobre el dominio puro |
+| Pantalla activa | expo-keep-awake |
+
+**Sin backend, sin llamadas de red** (RNF-1). Nada de Firebase, nada de auth en la v1.
+
+---
+
+## Decisiones ya tomadas
+
+Estas cerraban las decisiones abiertas de la especificación. Si alguna no te cierra,
+cambiala **acá** antes de empezar, no a mitad de camino.
+
+| ID | Decisión | Estado |
+|---|---|---|
+| A-1 | Karioka se precarga con 7 rondas (ver `seed.ts` en el paso 2.4). La usuaria puede duplicar la plantilla y editarla. | Provisional |
+| A-2 | El puntaje manual se carga **siempre como número positivo**; `modo_puntos` de la plantilla decide si entra sumando o restando al total. El signo de cada regla es propio de la regla y se guarda con signo. | **Cerrada** |
+| A-3 | No se elige la cantidad de rondas al armar la partida: se duplica la plantilla y se le sacan rondas. | Provisional |
+| A-4 | Nombre por defecto de la partida: `Partida del <d/m>`. Editable. | Provisional |
+| A-5 | Una sola partida en curso a la vez. Empezar otra exige terminar la anterior. | **Cerrada para el MVP** |
+| A-6 | El acumulado va en la fila del participante, a la derecha del puntaje de la ronda, más chico y en gris. | Provisional — **es un cambio de diseño, confirmalo antes del paso 7.3** |
+
+---
+
+## Estructura de carpetas
+
+Creala tal cual en el paso 0.2. El orden importa: `domain/` no importa nada de `db/`
+ni de React.
+
+```
+belia/
+  app/                        # expo-router: una pantalla por archivo
+    _layout.tsx
+    index.tsx                 # Home
+    partida/[id].tsx          # Partida en curso
+    partida/[id]/final.tsx    # Podio
+    plantillas/index.tsx
+    plantillas/[id].tsx
+    config/index.tsx
+  src/
+    domain/                   # TypeScript puro. Sin React, sin SQLite, sin imports de RN.
+      types.ts
+      scoring.ts
+      ranking.ts
+      rondas.ts
+      __tests__/
+    db/
+      client.ts               # apertura de la base
+      schema.sql
+      migrations.ts
+      seed.ts
+    repositories/             # una función por operación, SQL adentro, tipos del dominio afuera
+      participantes.ts
+      plantillas.ts
+      partidas.ts
+    hooks/                    # el puente entre repositorios y pantallas
+    components/               # UI reutilizable
+    theme/
+      tokens.ts
+    i18n/
+      es.ts
+```
+
+---
+
+# Fase 0 — Andamiaje
+
+- [ ] **0.1 — Crear el proyecto**
+
+  ```bash
+  npx create-expo-app@latest belia --template blank-typescript
+  cd belia
+  npx expo install expo-router expo-sqlite expo-keep-awake react-native-safe-area-context react-native-screens
+  npm i -D jest ts-jest @types/jest
+  ```
+
+  Configurá expo-router según la documentación vigente de Expo (entry point y `scheme` en
+  `app.json`). No copies configuración de memoria: leé la doc de la versión que instalaste.
+
+  **Checkpoint:** `npx expo start` levanta y la app abre en el teléfono o en el emulador.
+
+- [ ] **0.2 — Estructura y TypeScript estricto**
+
+  Creá las carpetas de arriba (con un `.gitkeep` donde todavía no haya archivos).
+  En `tsconfig.json`: `"strict": true` y un alias `@/*` → `src/*`.
+
+  **Checkpoint:** `npx tsc --noEmit` pasa sin errores.
+
+- [ ] **0.3 — Jest sobre el dominio**
+
+  Configurá jest con ts-jest, limitado a `src/domain`. No necesitás jest-expo todavía:
+  el dominio es TypeScript puro y se testea sin React Native.
+
+  ```json
+  { "scripts": { "test": "jest", "typecheck": "tsc --noEmit" } }
+  ```
+
+  **Checkpoint:** `npm test` corre y reporta 0 tests sin fallar.
+
+---
+
+# Fase 1 — Dominio puro
+
+Esta es la fase más importante. Toda la lógica de puntaje vive acá, en funciones puras y
+testeadas, **antes** de que exista una sola pantalla. Si esto queda bien, el resto es
+pegar botones.
+
+- [ ] **1.1 — Tipos del dominio**
+
+  `src/domain/types.ts`:
+
+  ```ts
+  export type AvatarTipo = 'color' | 'icono';
+  export type ModoPuntos = 'suma' | 'resta';
+  export type CriterioVictoria = 'menor' | 'mayor';
+  export type AlcanceRegla = 'todas' | 'opcional';
+  export type EstadoRonda = 'bloqueada' | 'en_curso' | 'cerrada';
+  export type EstadoPartida = 'en_curso' | 'finalizada';
+
+  export interface Participante {
+    id: string;
+    nombre: string;
+    avatarTipo: AvatarTipo;
+    avatarValor: string;
+  }
+
+  export interface Regla {
+    id: string;
+    titulo: string;
+    descripcion?: string;
+    puntajeBase: number;        // con signo, distinto de cero
+    alcance: AlcanceRegla;
+    asignacionUnica: boolean;
+    orden: number;
+  }
+
+  export interface RondaDefinida {
+    numero: number;
+    objetivo?: string;
+    /** puntaje de una regla solo para esta ronda; pisa a puntajeBase (RF-503) */
+    ajustes: Record<string, number>;   // reglaId -> puntaje
+  }
+
+  export interface Plantilla {
+    id: string;
+    nombre: string;
+    icono: string;
+    modoPuntos: ModoPuntos;
+    criterioVictoria: CriterioVictoria;
+    rondasIlimitadas: boolean;
+    reglas: Regla[];
+    rondas: RondaDefinida[];
+  }
+
+  /** Lo que se carga para un participante en una ronda */
+  export interface EntradaRonda {
+    participanteId: string;
+    /** siempre positivo o null; el signo lo pone modoPuntos (A-2) */
+    puntosManuales: number | null;
+    /** reglaId -> puntos congelados al marcar (C-4) */
+    marcas: Record<string, number>;
+  }
+
+  export interface RondaJugada {
+    numero: number;
+    objetivo?: string;
+    estado: EstadoRonda;
+    entradas: EntradaRonda[];
+  }
+
+  export interface Partida {
+    id: string;
+    nombre: string;
+    estado: EstadoPartida;
+    plantilla: Plantilla;        // el snapshot congelado (C-5)
+    participantes: Participante[];
+    rondas: RondaJugada[];
+  }
+  ```
+
+  **Checkpoint:** `npm run typecheck` pasa.
+
+- [ ] **1.2 — Cálculo de puntaje** (C-1, C-2, A-2)
+
+  `src/domain/scoring.ts`:
+
+  ```ts
+  /** C-1: lo que hizo un participante en una ronda. */
+  export function puntajeDeRonda(entrada: EntradaRonda, modo: ModoPuntos): number;
+
+  /** C-2: total acumulado de un participante en toda la partida. */
+  export function totalDeParticipante(partida: Partida, participanteId: string): number;
+
+  /** Todos los totales de una vez, para la vista de partida y el podio. */
+  export function totalesDePartida(partida: Partida): Array<{ participanteId: string; total: number }>;
+  ```
+
+  Reglas de implementación:
+  - `puntosManuales` entra con el signo que dicta `modo`: `suma` → `+n`, `resta` → `-n`.
+  - Cada marca entra con el valor **guardado en la marca**, no con el de la regla viva (C-4).
+  - `puntosManuales === null` cuenta como 0 para el acumulado, pero eso **no** significa
+    que la ronda esté completa: esa validación es del paso 1.4.
+
+  **Checkpoint:** escribí estos tests en `src/domain/__tests__/scoring.test.ts` y hacelos pasar:
+  - modo `suma`, 25 puntos manuales, sin marcas → `25`
+  - modo `resta`, 25 puntos manuales, sin marcas → `-25`
+  - modo `suma`, 25 manuales + marca de `-20` → `5`
+  - `puntosManuales: null` + marca de `-20` → `-20`
+  - total de 3 rondas suma las 3, incluida la que está `en_curso`
+
+- [ ] **1.3 — Ranking y empates** (C-3, RF-801, RF-804)
+
+  `src/domain/ranking.ts`:
+
+  ```ts
+  export interface Puesto {
+    posicion: number;          // 1, 1, 3 en caso de empate
+    participanteId: string;
+    total: number;
+  }
+  export function rankear(partida: Partida): Puesto[];
+  ```
+
+  **Checkpoint:** tests en `ranking.test.ts`:
+  - criterio `menor`: totales `-55, -40, -25, -10` → posiciones `1, 2, 3, 4`
+  - criterio `mayor`: los mismos totales → el orden se invierte
+  - empate en el primer puesto → `1, 1, 3` (el 2 se saltea)
+  - dos participantes → devuelve dos puestos, sin huecos
+
+- [ ] **1.4 — Estado de la ronda** (RF-406, RF-706, RF-707)
+
+  `src/domain/rondas.ts`:
+
+  ```ts
+  /** Puntaje que vale una regla en una ronda concreta: el ajuste si existe, si no el base. */
+  export function puntajeDeReglaEnRonda(plantilla: Plantilla, numeroRonda: number, reglaId: string): number;
+
+  /** RF-707: ¿todos cargaron su puntaje? */
+  export function todosCargaron(ronda: RondaJugada, participantes: Participante[]): boolean;
+
+  /** RF-706: las reglas de alcance 'todas' tienen que estar asignadas a alguien. */
+  export function reglasSinAsignar(ronda: RondaJugada, plantilla: Plantilla): Regla[];
+
+  /** RF-707 + RF-706 juntos. */
+  export function puedeCerrarRonda(ronda: RondaJugada, plantilla: Plantilla, participantes: Participante[]):
+    { puede: true } | { puede: false; motivo: 'faltan_puntajes' | 'faltan_reglas'; reglas?: Regla[] };
+
+  /** RF-406: marcar una regla única a alguien se la saca al anterior. */
+  export function marcarRegla(ronda: RondaJugada, plantilla: Plantilla, reglaId: string, participanteId: string): RondaJugada;
+  ```
+
+  `marcarRegla` es **pura**: devuelve una ronda nueva, no muta la que recibe.
+
+  **Checkpoint:** tests en `rondas.test.ts`:
+  - `puntajeDeReglaEnRonda` devuelve el ajuste cuando existe y el base cuando no
+  - `puedeCerrarRonda` con un participante sin puntaje → `faltan_puntajes`
+  - todos con puntaje pero una regla `todas` sin asignar → `faltan_reglas` y la nombra
+  - una regla `opcional` sin marcar **no** bloquea
+  - `marcarRegla` con `asignacionUnica: true` deja exactamente una marca de esa regla en toda la ronda
+  - `marcarRegla` con `asignacionUnica: false` permite dos participantes marcados
+
+**Fin de fase 1.** No sigas si `npm test` no está en verde. Todo lo que viene se apoya en esto.
+
+---
+
+# Fase 2 — Base de datos
+
+- [ ] **2.1 — Esquema**
+
+  `src/db/schema.sql`. Nombres de tabla y columna en `snake_case` y sin acentos.
+  Ids `TEXT` con uuid, timestamps `TEXT` en ISO 8601 (RNF-9).
+
+  ```sql
+  CREATE TABLE participante (
+    id TEXT PRIMARY KEY,
+    nombre TEXT NOT NULL,
+    avatar_tipo TEXT NOT NULL CHECK (avatar_tipo IN ('color','icono')),
+    avatar_valor TEXT NOT NULL,
+    es_dueno INTEGER NOT NULL DEFAULT 0,
+    archivado INTEGER NOT NULL DEFAULT 0,
+    creado_en TEXT NOT NULL
+  );
+
+  CREATE TABLE plantilla (
+    id TEXT PRIMARY KEY,
+    nombre TEXT NOT NULL,
+    icono TEXT NOT NULL,
+    es_predefinida INTEGER NOT NULL DEFAULT 0,
+    modo_puntos TEXT NOT NULL CHECK (modo_puntos IN ('suma','resta')),
+    criterio_victoria TEXT NOT NULL CHECK (criterio_victoria IN ('menor','mayor')),
+    rondas_ilimitadas INTEGER NOT NULL DEFAULT 0,
+    creada_en TEXT NOT NULL,
+    editada_en TEXT NOT NULL
+  );
+
+  CREATE TABLE regla_plantilla (
+    id TEXT PRIMARY KEY,
+    plantilla_id TEXT NOT NULL REFERENCES plantilla(id) ON DELETE CASCADE,
+    titulo TEXT NOT NULL,
+    descripcion TEXT,
+    puntaje_base INTEGER NOT NULL CHECK (puntaje_base <> 0),
+    alcance TEXT NOT NULL CHECK (alcance IN ('todas','opcional')),
+    asignacion_unica INTEGER NOT NULL DEFAULT 0,
+    orden INTEGER NOT NULL
+  );
+
+  CREATE TABLE ronda_plantilla (
+    id TEXT PRIMARY KEY,
+    plantilla_id TEXT NOT NULL REFERENCES plantilla(id) ON DELETE CASCADE,
+    numero INTEGER NOT NULL,
+    objetivo TEXT,
+    orden INTEGER NOT NULL
+  );
+
+  CREATE TABLE puntaje_regla_por_ronda (
+    ronda_plantilla_id TEXT NOT NULL REFERENCES ronda_plantilla(id) ON DELETE CASCADE,
+    regla_id TEXT NOT NULL REFERENCES regla_plantilla(id) ON DELETE CASCADE,
+    puntaje INTEGER NOT NULL,
+    PRIMARY KEY (ronda_plantilla_id, regla_id)
+  );
+
+  CREATE TABLE partida (
+    id TEXT PRIMARY KEY,
+    nombre TEXT NOT NULL,
+    plantilla_snapshot TEXT NOT NULL,     -- JSON del tipo Plantilla (C-5)
+    estado TEXT NOT NULL CHECK (estado IN ('en_curso','finalizada')),
+    ronda_actual INTEGER NOT NULL DEFAULT 1,
+    iniciada_en TEXT NOT NULL,
+    finalizada_en TEXT
+  );
+
+  CREATE TABLE partida_participante (
+    partida_id TEXT NOT NULL REFERENCES partida(id) ON DELETE CASCADE,
+    participante_id TEXT NOT NULL,
+    nombre_snapshot TEXT NOT NULL,
+    avatar_tipo_snapshot TEXT NOT NULL,
+    avatar_valor_snapshot TEXT NOT NULL,
+    orden INTEGER NOT NULL,
+    PRIMARY KEY (partida_id, participante_id)
+  );
+
+  CREATE TABLE ronda_partida (
+    id TEXT PRIMARY KEY,
+    partida_id TEXT NOT NULL REFERENCES partida(id) ON DELETE CASCADE,
+    numero INTEGER NOT NULL,
+    objetivo TEXT,
+    estado TEXT NOT NULL CHECK (estado IN ('bloqueada','en_curso','cerrada')),
+    UNIQUE (partida_id, numero)
+  );
+
+  CREATE TABLE puntaje_ronda (
+    ronda_partida_id TEXT NOT NULL REFERENCES ronda_partida(id) ON DELETE CASCADE,
+    participante_id TEXT NOT NULL,
+    puntos_manuales INTEGER,              -- NULL = todavía no cargó
+    PRIMARY KEY (ronda_partida_id, participante_id)
+  );
+
+  CREATE TABLE marca_regla (
+    ronda_partida_id TEXT NOT NULL REFERENCES ronda_partida(id) ON DELETE CASCADE,
+    regla_id TEXT NOT NULL,
+    participante_id TEXT NOT NULL,
+    puntos_aplicados INTEGER NOT NULL,    -- congelado al marcar (C-4)
+    PRIMARY KEY (ronda_partida_id, regla_id, participante_id)
+  );
+  ```
+
+  `participante_id` en las tablas de partida **no** lleva foreign key: la partida sobrevive
+  aunque se borre el participante, porque guarda su snapshot.
+
+  **Checkpoint:** el archivo existe y es SQL válido.
+
+- [ ] **2.2 — Conexión y migraciones** (RNF-10)
+
+  `src/db/client.ts` abre la base con `expo-sqlite`, activa `PRAGMA foreign_keys = ON`
+  y corre las migraciones pendientes.
+
+  `src/db/migrations.ts` mantiene una lista ordenada de migraciones y usa `user_version`
+  de SQLite para saber cuáles faltan. La migración 1 es el esquema del paso 2.1.
+
+  **Checkpoint:** la app arranca, crea el archivo de base y a la segunda corrida no vuelve
+  a aplicar la migración 1.
+
+- [ ] **2.3 — Repositorios**
+
+  Un archivo por agregado en `src/repositories/`. Cada función recibe y devuelve **tipos del
+  dominio**, nunca filas crudas: el mapeo `snake_case` → `camelCase` vive acá y en ningún
+  otro lado.
+
+  Mínimo necesario:
+
+  ```
+  participantes.ts   listar, obtener, crear, actualizar, archivar, obtenerDueno
+  plantillas.ts      listar, obtener (arma la Plantilla completa con reglas y rondas),
+                     crear, actualizar, duplicar, borrar
+  partidas.ts        obtenerEnCurso, obtener (arma la Partida completa),
+                     crear (congela el snapshot), guardarPuntaje, marcarRegla,
+                     desmarcarRegla, cerrarRonda, abrirRonda, finalizar
+  ```
+
+  `partidas.obtener` devuelve el tipo `Partida` del paso 1.1, con el snapshot ya parseado.
+  Ese es el objeto que consumen las funciones puras de la fase 1.
+
+  **Checkpoint:** `npm run typecheck` pasa y ningún archivo fuera de `repositories/`
+  contiene SQL.
+
+- [ ] **2.4 — Semilla de plantillas predefinidas** (RF-301)
+
+  `src/db/seed.ts` corre una sola vez, en la primera apertura, e inserta:
+
+  **Karioka** — `modoPuntos: 'suma'`, `criterioVictoria: 'menor'`, `rondasIlimitadas: false`.
+  Reglas:
+  - `Bajó primero`, base `-10`, alcance `todas`, asignación única
+  - `Cortó`, base `-10`, alcance `todas`, asignación única
+
+  Rondas (A-1, provisional):
+
+  | # | Objetivo | Ajuste de Bajó / Cortó |
+  |---|---|---|
+  | 1 | 2 piernas | −10 |
+  | 2 | 1 pierna + 1 escalera | −20 |
+  | 3 | 2 escaleras | −30 |
+  | 4 | 3 piernas | −40 |
+  | 5 | 2 piernas + 1 escalera | −50 |
+  | 6 | 1 pierna + 2 escaleras | −60 |
+  | 7 | 3 escaleras | −70 |
+
+  **Simple** — `modoPuntos: 'suma'`, `criterioVictoria: 'mayor'`, `rondasIlimitadas: true`,
+  sin reglas y sin rondas definidas.
+
+  **Checkpoint:** en una base recién creada, `plantillas.listar()` devuelve las dos, Karioka
+  con 2 reglas y 7 rondas. Borrar la app y reinstalar vuelve a sembrarlas sin duplicar.
+
+---
+
+# Fase 3 — Sistema de diseño
+
+El mockup es monocromo a propósito. Construí los componentes en escala de grises;
+si más adelante entra color, entra por los tokens y en un solo lugar.
+
+- [ ] **3.1 — Tokens**
+
+  `src/theme/tokens.ts`: escala de grises, tipografía, espaciado, radios.
+  Valores del mockup: tinta `#1C1C1E`, gris medio `#9A9AA0`, línea `#D8D8DC`,
+  superficie `#F2F2F4`, fondo `#FFFFFF`. Radios 10 / 12 / 14 / 16 / 18.
+  **Altura mínima de cualquier área tocable: 44** (RNF-3).
+
+- [ ] **3.2 — Componentes base**
+
+  En `src/components/`, cada uno con su archivo:
+
+  `Avatar` (color o ícono, tamaños 32/40/60), `Boton` (primario / secundario / deshabilitado),
+  `Chip`, `Card`, `BottomSheet`, `Popup`, `Stepper`, `Segmented`, `CampoTexto`, `Vacio`.
+
+  `Avatar` recibe `{ tipo, valor, nombre, tamano }` y resuelve solo si muestra inicial o ícono.
+
+  **Checkpoint:** una pantalla temporal que renderiza todos los componentes en todos sus
+  estados. Miralo en el teléfono, ajustá, y después borrá la pantalla.
+
+- [ ] **3.3 — Textos**
+
+  `src/i18n/es.ts` con todas las cadenas de interfaz. Ningún texto visible se escribe
+  suelto en un componente.
+
+---
+
+# Fase 4 — Home y participantes
+
+- [ ] **4.1 — Alta del dueño del dispositivo** (RF-205, RF-901)
+
+  En el primer arranque, si no hay participante con `es_dueno = 1`, pedir nombre y avatar
+  antes de mostrar el home.
+
+  **Checkpoint:** primera corrida pide los datos; la segunda va directo al home.
+
+- [ ] **4.2 — Home** (RF-101 a RF-105)
+
+  `app/index.tsx`. Consulta `partidas.obtenerEnCurso()`:
+  - hay partida → se muestran las dos acciones, con plantilla, cantidad de jugadores y ronda
+  - no hay → solo «Nuevo juego» y la línea de estado vacío
+
+  Abajo, los dos íconos: configuración y plantillas (todavía pueden no navegar a nada).
+
+  **Checkpoint:** las dos variantes del home se ven según haya o no partida en curso.
+
+- [ ] **4.3 — Crear y editar participantes** (RF-201 a RF-204)
+
+  Popup de alta con nombre y selector de color o ícono. Validación: obligatorio,
+  máximo 20 caracteres, sin repetir entre activos.
+
+  **Checkpoint:** se crea un participante, se cierra y se reabre la app, y sigue ahí.
+
+---
+
+# Fase 5 — Plantillas y reglas
+
+- [ ] **5.1 — Lista de plantillas** (RF-303, RF-304, RF-305)
+
+  `app/plantillas/index.tsx`. Las predefinidas se muestran con un candado: se duplican,
+  no se editan ni se borran. Borrar una propia pide confirmación (RNF-6).
+
+- [ ] **5.2 — Editor de plantilla: datos generales** (RF-302)
+
+  `app/plantillas/[id].tsx`, primera parte: nombre, ícono, `modo_puntos`, `criterio_victoria`.
+
+- [ ] **5.3 — Reglas** (RF-401 a RF-406)
+
+  Lista de reglas de la plantilla con su puntaje y su alcance, más el sheet de alta y
+  edición: título, descripción opcional, suma o resta, valor, y alcance con las dos
+  opciones explicadas.
+
+  Validación: título obligatorio, puntaje distinto de cero (RF-404).
+
+  **Checkpoint:** se agrega una regla a una plantilla duplicada, se reabre la app y quedó.
+
+- [ ] **5.4 — Rondas y ajuste por ronda** (RF-501 a RF-505)
+
+  Lista de rondas con su objetivo y los chips de las reglas con el puntaje que valen en esa
+  ronda. Editar una ronda abre un sheet con el objetivo y un stepper por regla; si el valor
+  difiere del base, se guarda un `puntaje_regla_por_ronda` y se marca como ajustado.
+
+  **Checkpoint:** cambiar el puntaje de una regla en la ronda 1 no cambia el de la ronda 2
+  ni el base de la plantilla.
+
+---
+
+# Fase 6 — Nueva partida
+
+- [ ] **6.1 — Bottom sheet de armado** (RF-601 a RF-605)
+
+  Grilla de plantillas de a dos por fila, grilla de participantes de a dos por fila con el
+  dueño preseleccionado y un círculo de «agregar». Tope de 8 (RF-605).
+
+  `EMPEZAR` deshabilitado hasta tener una plantilla y dos participantes (RF-604).
+
+- [ ] **6.2 — Crear la partida** (RF-606, A-4)
+
+  Al confirmar:
+  1. armar el objeto `Plantilla` completo desde los repositorios
+  2. serializarlo en `partida.plantilla_snapshot` (C-5)
+  3. copiar nombre y avatar de cada participante en `partida_participante`
+  4. crear la ronda 1 en `en_curso` y el resto en `bloqueada`
+  5. nombre por defecto `Partida del <d/m>`
+  6. navegar a `partida/[id]`
+
+  **Checkpoint:** después de crear la partida, editá la plantilla original y volvé a abrir la
+  partida: **no cambió nada**. Si cambió, el snapshot está mal y hay que arreglarlo antes de
+  seguir.
+
+---
+
+# Fase 7 — Partida en curso
+
+El corazón de la app. Todo el cálculo sale de las funciones de la fase 1: si te encontrás
+escribiendo una suma dentro de un componente, está mal.
+
+- [ ] **7.1 — Estructura de la pantalla** (RF-701, RF-702, RF-712)
+
+  `app/partida/[id].tsx`: encabezado con el nombre editable, lista de rondas (cerradas
+  colapsadas, actual expandida, siguientes bloqueadas) y `TERMINAR` fijo abajo.
+
+  Activá `useKeepAwake()` (RF-713).
+
+  **Checkpoint:** salir de la pantalla y volver desde el home deja todo igual.
+
+- [ ] **7.2 — Ronda activa** (RF-703, RF-704)
+
+  Objetivo, puntaje que valen las reglas, y una fila por participante con avatar, nombre y
+  su puntaje de la ronda. Sin cargar, un espacio tocable claramente vacío.
+
+  **Sin botones de regla en la fila** — así quedó decidido en el diseño.
+
+- [ ] **7.3 — Acumulado** (RF-710, A-6)
+
+  **Confirmá A-6 antes de hacer este paso.** La opción provisional es mostrar el total a la
+  derecha del puntaje de la ronda, más chico y en gris.
+
+- [ ] **7.4 — Popup de carga** (RF-705)
+
+  Se abre al tocar una fila: stepper de puntaje (siempre positivo, A-2) y la lista de reglas
+  de esa ronda con su puntaje y un tilde.
+
+  Al marcar una regla con `asignacionUnica`, usá `marcarRegla` del paso 1.4 y guardá
+  `puntos_aplicados` con el valor que devuelve `puntajeDeReglaEnRonda` (C-4).
+
+  **Checkpoint:** marcar «bajó primero» a un participante se lo saca al anterior,
+  y los totales de los dos se actualizan.
+
+- [ ] **7.5 — Avanzar de ronda** (RF-706, RF-707, RF-708)
+
+  `SIGUIENTE` habilitado según `puedeCerrarRonda`. Si falta una regla de alcance `todas`,
+  mostrar cuál (RF-706). Al cerrar: la ronda pasa a `cerrada`, la siguiente a `en_curso`.
+  Si la plantilla es de rondas ilimitadas y no hay siguiente, crear una nueva.
+
+  **Checkpoint:** una partida de Karioka avanza de la ronda 1 a la 2 y el objetivo cambia.
+  Una partida Simple genera rondas indefinidamente.
+
+- [ ] **7.6 — Corregir una ronda cerrada** (RF-709)
+
+  Tocar una ronda cerrada la expande y deja editar sus puntajes. Los totales se recalculan.
+
+  **Checkpoint:** corregir un puntaje de la ronda 1 cambia el acumulado en la ronda 3.
+
+---
+
+# Fase 8 — Finalizar
+
+- [ ] **8.1 — Terminar la partida** (RF-710 → confirmación, RF-711, RF-805)
+
+  `TERMINAR` pide confirmación y avisa si la ronda en curso quedó incompleta. Al confirmar,
+  la partida pasa a `finalizada` y deja de aparecer en el home.
+
+- [ ] **8.2 — Podio** (RF-801 a RF-804)
+
+  `app/partida/[id]/final.tsx`. Usa `rankear()` del paso 1.3. Podio en orden visual
+  2º–1º–3º y el resto en lista. Con dos participantes, sin escalón vacío (RF-803).
+  Empates compartiendo posición (RF-804).
+
+  **Checkpoint:** una partida de 4 con dos empatados en primer lugar se ve correcta.
+
+---
+
+# Fase 9 — Cierre del MVP
+
+- [ ] **9.1 — Configuración** (RF-901 a RF-903)
+
+  Perfil del dueño, administración de participantes y acceso a plantillas.
+
+- [ ] **9.2 — Confirmaciones y estados vacíos** (RNF-6)
+
+  Revisá que borrar plantilla, borrar participante y terminar partida pidan confirmación.
+  Revisá que ninguna lista vacía quede en blanco sin explicación.
+
+- [ ] **9.3 — Repaso de no funcionales**
+
+  - RNF-2: matá la app en medio de una ronda y verificá que no se perdió nada
+  - RNF-3: ningún área tocable por debajo de 44
+  - RNF-4: numerales tabulares en todos los puntajes
+  - RNF-7: subí el tamaño de fuente del sistema al máximo y recorré las pantallas
+  - RNF-8: medí el arranque en frío
+
+- [ ] **9.4 — Partida completa de punta a punta**
+
+  Armá una partida de Karioka con 4 participantes, jugá 3 rondas cargando puntajes y
+  marcando reglas, corregí un puntaje viejo, terminá y mirá el podio. Sin recargar la app
+  a mano en ningún momento.
+
+---
+
+## Convenciones
+
+- **Nada de lógica de puntaje fuera de `src/domain`.** Los componentes muestran lo que el
+  dominio calcula.
+- **Nada de SQL fuera de `src/repositories`.**
+- **Ids uuid siempre**, nunca el índice de un array ni un autoincremental (RNF-9).
+- **Una función, un archivo, un propósito.** Si un componente pasa las 150 líneas,
+  probablemente tiene adentro algo que va en un hook o en el dominio.
+- **Guardar en el momento** (RNF-2). No acumules cambios en memoria para guardar al salir.
+- **Textos de usuario solo desde `i18n/es.ts`.**
+
+## Qué no hacer
+
+- No recalcular los puntajes de una partida desde las reglas vivas de la plantilla: se usa
+  el snapshot y las marcas congeladas (C-4, C-5).
+- No guardar el puntaje manual con signo: positivo siempre, el signo lo pone `modo_puntos` (A-2).
+- No agregar dependencias que no estén en la sección Stack sin preguntar.
+- No implementar nada marcado como fase 2 en la especificación: sincronización, historial,
+  compartir, exportar, tema oscuro, cuentas.
+- No inventar pantallas que no estén en el mockup. Si hace falta una, pará y preguntá.
