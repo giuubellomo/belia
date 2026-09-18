@@ -164,10 +164,24 @@ BELIA/                        # la raíz del repo es la raíz del proyecto Expo
 
   **Checkpoint:** `npx expo start` levanta y la app abre en el teléfono o en el emulador.
 
-- [ ] **0.2 — Estructura y TypeScript estricto**
+- [x] **0.2 — Estructura y TypeScript estricto**
 
   Creá las carpetas de arriba (con un `.gitkeep` donde todavía no haya archivos).
   En `tsconfig.json`: `"strict": true` y un alias `@/*` → `src/*`.
+
+  **Sin `baseUrl`.** TypeScript 6 lo deprecó y `tsc` corta con `TS5101` antes de mirar el
+  código, así que el checkpoint falla por el config y no por el alias. Desde TS 5 los `paths`
+  se resuelven relativos al propio `tsconfig.json`, así que alcanza con:
+
+  ```json
+  { "compilerOptions": { "strict": true, "paths": { "@/*": ["./src/*"] } } }
+  ```
+
+  La doc de Expo todavía muestra `baseUrl`: está escrita para TypeScript 5. No la copies.
+
+  Metro resuelve estos alias solo (`tsconfigPaths` viene activado por defecto), así que no
+  hace falta tocar `app.json` ni `metro.config.js`. Después de cambiar `tsconfig.json` hay
+  que reiniciar el server para que los tome.
 
   **Checkpoint:** `npx tsc --noEmit` pasa sin errores.
 
