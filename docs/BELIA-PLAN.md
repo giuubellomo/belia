@@ -398,7 +398,7 @@ pegar botones.
 
 # Fase 2 — Base de datos
 
-- [ ] **2.1 — Esquema**
+- [x] **2.1 — Esquema**
 
   `src/db/schema.sql`. Nombres de tabla y columna en `snake_case` y sin acentos.
   Ids `TEXT` con uuid, timestamps `TEXT` en ISO 8601 (RNF-9).
