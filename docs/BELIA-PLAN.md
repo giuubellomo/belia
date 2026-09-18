@@ -335,7 +335,7 @@ pegar botones.
   - total de 3 rondas suma las 3, incluida la que está `en_curso`
   - `totalesDePartida` devuelve un total por participante, incluidos los que no cargaron nada
 
-- [ ] **1.3 — Ranking y empates** (C-3, RF-801, RF-804)
+- [x] **1.3 — Ranking y empates** (C-3, RF-801, RF-804)
 
   `src/domain/ranking.ts`:
 
