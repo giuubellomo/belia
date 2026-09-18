@@ -56,7 +56,7 @@ cambiala **acá** antes de empezar, no a mitad de camino.
 | A-2 | El puntaje manual se carga **siempre como número positivo**; `modo_puntos` de la plantilla decide si entra sumando o restando al total. El signo de cada regla es propio de la regla y se guarda con signo. | **Cerrada** |
 | A-3 | No se elige la cantidad de rondas al armar la partida: se duplica la plantilla y se le sacan rondas. | Provisional |
 | A-4 | Nombre por defecto de la partida: `Partida del <d/m>`. Editable. | Provisional |
-| A-5 | Una sola partida en curso a la vez. Empezar otra exige terminar la anterior. | **Cerrada para el MVP** |
+| A-5 | Una sola partida en curso a la vez. Con una partida abierta, «Nuevo juego» sigue visible pero pide confirmación para terminar la anterior. | **Cerrada para el MVP** |
 | A-6 | El acumulado va en la fila del participante, a la derecha del puntaje de la ronda, más chico y en gris. | Provisional — **es un cambio de diseño, confirmalo antes del paso 7.3** |
 
 ---
@@ -67,7 +67,9 @@ Creala tal cual en el paso 0.2. El orden importa: `domain/` no importa nada de `
 ni de React.
 
 ```
-belia/
+BELIA/                        # la raíz del repo es la raíz del proyecto Expo
+  docs/
+    BELIA-PLAN.md             # este archivo
   app/                        # expo-router: una pantalla por archivo
     _layout.tsx
     index.tsx                 # Home
@@ -92,7 +94,11 @@ belia/
       participantes.ts
       plantillas.ts
       partidas.ts
-    hooks/                    # el puente entre repositorios y pantallas
+    hooks/                    # el puente entre repositorios y pantallas (paso 2.5)
+      usePartidaEnCurso.ts
+      usePartida.ts
+      useParticipantes.ts
+      usePlantillas.ts
     components/               # UI reutilizable
     theme/
       tokens.ts
@@ -106,15 +112,25 @@ belia/
 
 - [ ] **0.1 — Crear el proyecto**
 
+  El proyecto se crea **en la raíz del repo**, que ya existe y ya tiene `docs/` adentro.
+  No lo crees en un subdirectorio: el repo y el proyecto son la misma carpeta.
+
   ```bash
-  npx create-expo-app@latest belia --template blank-typescript
-  cd belia
+  npx create-expo-app@latest . --template blank-typescript
   npx expo install expo-router expo-sqlite expo-keep-awake react-native-safe-area-context react-native-screens
   npm i -D jest ts-jest @types/jest
   ```
 
+  La carpeta no está vacía (ya tiene `docs/` y el repo). Si `create-expo-app` se niega a
+  escribir ahí, pará y preguntá antes de borrar nada.
+
+  Después de crear, verificá con `git log` que el commit `Start` sigue estando y que
+  `git remote -v` sigue apuntando a `origin`. El repo es el que ya existe, no uno nuevo.
+
   Configurá expo-router según la documentación vigente de Expo (entry point y `scheme` en
   `app.json`). No copies configuración de memoria: leé la doc de la versión que instalaste.
+  `blank-typescript` no trae expo-router cableado — es trabajo tuyo y es la parte del paso
+  que más fácil sale mal.
 
   **Checkpoint:** `npx expo start` levanta y la app abre en el teléfono o en el emulador.
 
@@ -129,6 +145,10 @@ belia/
 
   Configurá jest con ts-jest, limitado a `src/domain`. No necesitás jest-expo todavía:
   el dominio es TypeScript puro y se testea sin React Native.
+
+  Si el dominio importa con el alias `@/…`, jest necesita el `moduleNameMapper` equivalente
+  (`'^@/(.*)$': '<rootDir>/src/$1'`). Sin eso el checkpoint falla por una razón que no tiene
+  nada que ver con el código.
 
   ```json
   { "scripts": { "test": "jest", "typecheck": "tsc --noEmit" } }
@@ -244,8 +264,12 @@ pegar botones.
   - modo `suma`, 25 puntos manuales, sin marcas → `25`
   - modo `resta`, 25 puntos manuales, sin marcas → `-25`
   - modo `suma`, 25 manuales + marca de `-20` → `5`
+  - modo `resta`, 25 manuales + marca de `-20` → `-45`
+    — **el signo de la marca no se invierte nunca con `modo`** (A-2). `modo` manda sobre el
+    puntaje manual y sobre nada más. Este test existe para que nadie lo "arregle" después.
   - `puntosManuales: null` + marca de `-20` → `-20`
   - total de 3 rondas suma las 3, incluida la que está `en_curso`
+  - `totalesDePartida` devuelve un total por participante, incluidos los que no cargaron nada
 
 - [ ] **1.3 — Ranking y empates** (C-3, RF-801, RF-804)
 
@@ -286,9 +310,13 @@ pegar botones.
 
   /** RF-406: marcar una regla única a alguien se la saca al anterior. */
   export function marcarRegla(ronda: RondaJugada, plantilla: Plantilla, reglaId: string, participanteId: string): RondaJugada;
+
+  /** Saca la marca de una regla a un participante. El tilde del paso 7.4 es un toggle. */
+  export function desmarcarRegla(ronda: RondaJugada, reglaId: string, participanteId: string): RondaJugada;
   ```
 
-  `marcarRegla` es **pura**: devuelve una ronda nueva, no muta la que recibe.
+  `marcarRegla` y `desmarcarRegla` son **puras**: devuelven una ronda nueva, no mutan la que
+  reciben. Desmarcar no necesita la plantilla: solo borra una marca ya congelada.
 
   **Checkpoint:** tests en `rondas.test.ts`:
   - `puntajeDeReglaEnRonda` devuelve el ajuste cuando existe y el base cuando no
@@ -297,6 +325,8 @@ pegar botones.
   - una regla `opcional` sin marcar **no** bloquea
   - `marcarRegla` con `asignacionUnica: true` deja exactamente una marca de esa regla en toda la ronda
   - `marcarRegla` con `asignacionUnica: false` permite dos participantes marcados
+  - `desmarcarRegla` saca esa marca y deja intactos los puntajes manuales y las demás marcas
+  - `desmarcarRegla` sobre una regla que no estaba marcada devuelve una ronda equivalente, sin romper
 
 **Fin de fase 1.** No sigas si `npm test` no está en verde. Todo lo que viene se apoya en esto.
 
@@ -346,15 +376,15 @@ pegar botones.
   CREATE TABLE ronda_plantilla (
     id TEXT PRIMARY KEY,
     plantilla_id TEXT NOT NULL REFERENCES plantilla(id) ON DELETE CASCADE,
-    numero INTEGER NOT NULL,
+    numero INTEGER NOT NULL,          -- el numero ES el orden: no hay columna orden aparte
     objetivo TEXT,
-    orden INTEGER NOT NULL
+    UNIQUE (plantilla_id, numero)
   );
 
   CREATE TABLE puntaje_regla_por_ronda (
     ronda_plantilla_id TEXT NOT NULL REFERENCES ronda_plantilla(id) ON DELETE CASCADE,
     regla_id TEXT NOT NULL REFERENCES regla_plantilla(id) ON DELETE CASCADE,
-    puntaje INTEGER NOT NULL,
+    puntaje INTEGER NOT NULL CHECK (puntaje <> 0),   -- mismo criterio que puntaje_base (RF-404)
     PRIMARY KEY (ronda_plantilla_id, regla_id)
   );
 
@@ -363,7 +393,6 @@ pegar botones.
     nombre TEXT NOT NULL,
     plantilla_snapshot TEXT NOT NULL,     -- JSON del tipo Plantilla (C-5)
     estado TEXT NOT NULL CHECK (estado IN ('en_curso','finalizada')),
-    ronda_actual INTEGER NOT NULL DEFAULT 1,
     iniciada_en TEXT NOT NULL,
     finalizada_en TEXT
   );
@@ -405,6 +434,11 @@ pegar botones.
 
   `participante_id` en las tablas de partida **no** lleva foreign key: la partida sobrevive
   aunque se borre el participante, porque guarda su snapshot.
+
+  **No hay columna `ronda_actual` en `partida`.** La ronda en curso es, por definición, la
+  única fila de `ronda_partida` con `estado = 'en_curso'`, y se deriva de ahí siempre. Una
+  columna aparte sería una segunda fuente de verdad y se desincronizaría en cuanto alguien
+  corrija una ronda vieja (RF-709).
 
   **Checkpoint:** el archivo existe y es SQL válido.
 
@@ -469,6 +503,36 @@ pegar botones.
   **Checkpoint:** en una base recién creada, `plantillas.listar()` devuelve las dos, Karioka
   con 2 reglas y 7 rondas. Borrar la app y reinstalar vuelve a sembrarlas sin duplicar.
 
+- [ ] **2.5 — Hooks: cómo la pantalla se entera de que la base cambió** (RNF-2)
+
+  Este paso define el único patrón de acceso a datos de toda la app. Resolvelo acá, con la
+  cabeza fría, y no en medio de la fase 7.
+
+  La regla: **después de cada escritura se recarga el agregado entero desde la base.** Nada
+  de estado optimista, nada de parchear el objeto en memoria. La `Partida` es chica (hasta 8
+  participantes por unas pocas rondas) y las funciones puras de la fase 1 ya trabajan sobre
+  el objeto completo, así que recargar es barato y elimina de raíz toda una familia de bugs
+  de desincronización.
+
+  En `src/hooks/`:
+
+  ```ts
+  /** Devuelve la Partida completa y un mutar() que escribe y recarga. */
+  function usePartida(id: string): {
+    partida: Partida | null;
+    cargando: boolean;
+    mutar: (accion: () => Promise<void>) => Promise<void>;
+  };
+  ```
+
+  `mutar` corre la escritura del repositorio, espera, y vuelve a llamar a
+  `partidas.obtener(id)`. Las pantallas nunca llaman a un repositorio directo: piden un hook.
+
+  Lo mismo para `usePartidaEnCurso()`, `useParticipantes()` y `usePlantillas()`.
+
+  **Checkpoint:** con la partida abierta, guardar un puntaje desde el popup actualiza la fila
+  y el acumulado sin que ninguna pantalla haga `setState` sobre datos de la base a mano.
+
 ---
 
 # Fase 3 — Sistema de diseño
@@ -513,9 +577,14 @@ si más adelante entra color, entra por los tokens y en un solo lugar.
 
 - [ ] **4.2 — Home** (RF-101 a RF-105)
 
-  `app/index.tsx`. Consulta `partidas.obtenerEnCurso()`:
+  `app/index.tsx`. Consulta `partidas.obtenerEnCurso()` (vía `usePartidaEnCurso`, paso 2.5):
   - hay partida → se muestran las dos acciones, con plantilla, cantidad de jugadores y ronda
   - no hay → solo «Nuevo juego» y la línea de estado vacío
+
+  **A-5 se hace cumplir acá.** Con una partida en curso, «Nuevo juego» sigue visible, pero al
+  tocarlo abre una confirmación en lugar del armado: «Terminá "<nombre>" para empezar una
+  nueva», con Cancelar y Terminar. Terminar finaliza la partida anterior (mismo camino que el
+  paso 8.1) y recién ahí abre el sheet de armado. Nunca hay dos partidas `en_curso` a la vez.
 
   Abajo, los dos íconos: configuración y plantillas (todavía pueden no navegar a nada).
 
@@ -571,13 +640,18 @@ si más adelante entra color, entra por los tokens y en un solo lugar.
 
   `EMPEZAR` deshabilitado hasta tener una plantilla y dos participantes (RF-604).
 
+  El sheet asume que **no hay ninguna partida en curso**: el home ya resolvió ese caso en el
+  paso 4.2. Si igual llega a abrirse con una partida abierta, es un bug, no un caso a manejar.
+
 - [ ] **6.2 — Crear la partida** (RF-606, A-4)
 
   Al confirmar:
   1. armar el objeto `Plantilla` completo desde los repositorios
   2. serializarlo en `partida.plantilla_snapshot` (C-5)
   3. copiar nombre y avatar de cada participante en `partida_participante`
-  4. crear la ronda 1 en `en_curso` y el resto en `bloqueada`
+  4. crear las rondas: la 1 en `en_curso` y el resto en `bloqueada`.
+     Si `rondasIlimitadas` es `true` (plantilla **Simple**, que no tiene rondas definidas),
+     se crea **solo la ronda 1**; las siguientes nacen de a una al cerrar la anterior (7.5).
   5. nombre por defecto `Partida del <d/m>`
   6. navegar a `partida/[id]`
 
@@ -637,6 +711,11 @@ escribiendo una suma dentro de un componente, está mal.
 
   Tocar una ronda cerrada la expande y deja editar sus puntajes. Los totales se recalculan.
 
+  La ronda **sigue en estado `cerrada`** mientras se la corrige: corregir no la vuelve la
+  ronda en curso, y la ronda `en_curso` sigue siendo la que era. Si al corregir se marca una
+  regla de nuevo, `puntos_aplicados` se vuelve a congelar con `puntajeDeReglaEnRonda` para
+  **esa** ronda, no para la actual (C-4).
+
   **Checkpoint:** corregir un puntaje de la ronda 1 cambia el acumulado en la ronda 3.
 
 ---
@@ -647,6 +726,10 @@ escribiendo una suma dentro de un componente, está mal.
 
   `TERMINAR` pide confirmación y avisa si la ronda en curso quedó incompleta. Al confirmar,
   la partida pasa a `finalizada` y deja de aparecer en el home.
+
+  **Consecuencia asumida:** sin historial (es fase 2), el podio se ve una sola vez. Si la
+  usuaria cierra la app estando en el podio, no hay forma de volver a ese resultado. La
+  partida finalizada queda en la base igual, así que el historial de fase 2 la va a encontrar.
 
 - [ ] **8.2 — Podio** (RF-801 a RF-804)
 
@@ -690,6 +773,8 @@ escribiendo una suma dentro de un componente, está mal.
 - **Nada de lógica de puntaje fuera de `src/domain`.** Los componentes muestran lo que el
   dominio calcula.
 - **Nada de SQL fuera de `src/repositories`.**
+- **Las pantallas no llaman repositorios directo:** pasan por un hook de `src/hooks` (paso 2.5).
+  Toda escritura recarga el agregado desde la base.
 - **Ids uuid siempre**, nunca el índice de un array ni un autoincremental (RNF-9).
 - **Una función, un archivo, un propósito.** Si un componente pasa las 150 líneas,
   probablemente tiene adentro algo que va en un hook o en el dominio.
@@ -705,3 +790,24 @@ escribiendo una suma dentro de un componente, está mal.
 - No implementar nada marcado como fase 2 en la especificación: sincronización, historial,
   compartir, exportar, tema oscuro, cuentas.
 - No inventar pantallas que no estén en el mockup. Si hace falta una, pará y preguntá.
+
+---
+
+## Registro de cambios al plan
+
+Revisión del 18/9/2026, antes de escribir la primera línea de código. Todo lo de acá ya está
+aplicado arriba; queda anotado para que se entienda por qué el plan dice lo que dice.
+
+| # | Cambio | Motivo |
+|---|---|---|
+| 1 | El proyecto se crea en la raíz del repo, no en `belia/`. El plan se mudó a `docs/`. | La carpeta ya era el repo: `create-expo-app belia` habría anidado el proyecto y creado un segundo git. |
+| 2 | **Paso 2.5 nuevo**: hooks y patrón de acceso a datos. Toda escritura recarga el agregado. | `src/hooks/` estaba en la estructura y en ningún paso. Sin definirlo, la decisión caía a mitad de la fase 7, apurada. |
+| 3 | Se eliminó `partida.ronda_actual`. La ronda en curso se deriva de `ronda_partida.estado`. | Dos fuentes de verdad que se contradicen apenas se corrige una ronda vieja (RF-709). |
+| 4 | `desmarcarRegla` agregada al dominio (paso 1.4) con sus tests. | El repositorio ya la listaba; sin la función pura, el toggle del paso 7.4 terminaba escrito en un componente. |
+| 5 | El paso 6.2 dice explícitamente que con `rondasIlimitadas` se crea solo la ronda 1. | «La 1 en curso y el resto bloqueadas» funcionaba por accidente con la plantilla Simple, que no tiene rondas. |
+| 6 | A-5 se hace cumplir en el paso 4.2, con confirmación al tocar «Nuevo juego». | La decisión estaba cerrada pero ningún paso la implementaba. |
+| 7 | Test de `modo: 'resta'` + marca negativa en el paso 1.2. | Fija que el signo de la marca nunca se invierte con `modo_puntos` (A-2). Es lo más fácil de romper sin darse cuenta. |
+| 8 | `CHECK (puntaje <> 0)` en `puntaje_regla_por_ronda`; `ronda_plantilla` pierde `orden` y gana `UNIQUE (plantilla_id, numero)`. | Coherencia con RF-404 y con `regla_plantilla`; `numero` y `orden` eran redundantes. |
+| 9 | Nota en 7.6: corregir una ronda cerrada no la vuelve `en_curso`, y re-marcar recongela el puntaje de **esa** ronda. | Era la ambigüedad más peligrosa de C-4. |
+| 10 | Nota en 8.1: sin historial, el podio se ve una sola vez. | Que sea una decisión asumida y no un descubrimiento. |
+| 11 | Nota sobre `moduleNameMapper` de ts-jest en el paso 0.3; aviso de que `blank-typescript` no trae expo-router cableado. | Dos checkpoints que fallan por razones que no tienen que ver con el código. |
