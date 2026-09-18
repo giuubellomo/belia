@@ -201,7 +201,7 @@ BELIA/                        # la raíz del repo es la raíz del proyecto Expo
   nada que ver con el código.
 
   ```json
-  { "scripts": { "test": "jest --passWithNoTests", "typecheck": "tsc --noEmit" } }
+  { "scripts": { "test": "jest", "typecheck": "tsc --noEmit" } }
   ```
 
   **`tsconfig.jest.json` aparte, que no extiende el de Expo.** El tsconfig del proyecto usa
@@ -210,10 +210,10 @@ BELIA/                        # la raíz del repo es la raíz del proyecto Expo
   TypeScript puro, su tsconfig de tests no necesita nada de Expo: se declara solo, con
   `module: commonjs`, `moduleResolution: node10` y el mismo alias.
 
-  **`--passWithNoTests` es temporal.** Está para que este checkpoint pase con el dominio
-  todavía vacío. **Sacalo al terminar el paso 1.4**, cuando ya existan los tests de verdad:
-  si queda, un día alguien rompe `roots` en `jest.config.js`, no corre ni un test y `npm test`
-  igual da verde, que es justo el fallo que este proyecto no se puede permitir.
+  **`--passWithNoTests` era temporal y ya se sacó** (paso 1.4). Estaba para que este
+  checkpoint pasara con el dominio todavía vacío. Hoy `npm test` es `jest` a secas, así que
+  si alguien rompe `roots` en `jest.config.js` y no corre ni un test, sale con código 1 en
+  vez de dar verde. No lo vuelvas a agregar.
 
   **Checkpoint:** `npm test` corre y reporta 0 tests sin fallar.
 
@@ -354,7 +354,7 @@ pegar botones.
   - empate en el primer puesto → `1, 1, 3` (el 2 se saltea)
   - dos participantes → devuelve dos puestos, sin huecos
 
-- [ ] **1.4 — Estado de la ronda** (RF-406, RF-706, RF-707)
+- [x] **1.4 — Estado de la ronda** (RF-406, RF-706, RF-707)
 
   `src/domain/rondas.ts`:
 
@@ -885,5 +885,5 @@ Durante el paso 0.1 (Expo SDK 57):
 | 14 | Queda escrito que **no** va `babel.config.js`. | Crearlo rompe Metro: `babel-preset-expo` vive anidado en `node_modules/expo/node_modules/`. Perdido medio paso en descubrirlo. |
 | 15 | El alias va **sin `baseUrl`** (paso 0.2). | TypeScript 6 lo deprecó: `tsc` corta con `TS5101` antes de mirar el código. La doc de Expo que lo muestra está escrita para TS 5. |
 | 16 | `tsconfig.jest.json` propio, que no extiende el de Expo (paso 0.3). | `module: preserve` + `moduleResolution: bundler` no corren en jest, y no se pisan de a una sin chocar con `customConditions`. |
-| 17 | `npm test` lleva `--passWithNoTests`, **a remover en el paso 1.4**. | Necesario para que 0 tests no falle hoy; peligroso de dejar una vez que haya tests. |
+| 17 | `npm test` llevó `--passWithNoTests` entre 0.3 y 1.4, y se removió al cerrar 1.4. | Necesario para que 0 tests no fallara con el dominio vacío; peligroso de dejar una vez que hay tests. |
 | 18 | `tsconfig.json` declara `"types": ["jest"]` (anotado en 0.2, surge en 1.2). | TypeScript 6 no auto-incluye `node_modules/@types`. Sin eso, `typecheck` falla en los tests con `TS2593` aunque `npm test` pase. |
