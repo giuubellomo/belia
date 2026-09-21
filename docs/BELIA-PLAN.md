@@ -636,12 +636,15 @@ pegar botones.
 El mockup es monocromo a propósito. Construí los componentes en escala de grises;
 si más adelante entra color, entra por los tokens y en un solo lugar.
 
-- [ ] **3.1 — Tokens**
+- [x] **3.1 — Tokens**
 
   `src/theme/tokens.ts`: escala de grises, tipografía, espaciado, radios.
   Valores del mockup: tinta `#1C1C1E`, gris medio `#9A9AA0`, línea `#D8D8DC`,
   superficie `#F2F2F4`, fondo `#FFFFFF`. Radios 10 / 12 / 14 / 16 / 18.
   **Altura mínima de cualquier área tocable: 44** (RNF-3).
+
+  **Cómo quedó** (ver registro, cambio 35): `colores`, `radios`, `espacios`, `tipografia`,
+  `AREA_TOCABLE_MINIMA` y `numerales` (RNF-4). Tipografía y espaciado son provisionales.
 
 - [ ] **3.2 — Componentes base**
 
@@ -959,3 +962,9 @@ Durante el paso 2.5 (hooks):
 | 32 | `mutar` es una sola función para toda la app: después de escribir recarga **todos** los hooks montados, no solo el que la llamó. Es genérica: devuelve lo que devuelva la escritura. Los hooks exponen además `error`. | El Home queda montado debajo de la partida en el stack: si solo recargara el hook que escribió, al volver mostraría datos viejos. Que devuelva el resultado es para `partidas.crear`, que el paso 6.2 necesita para navegar a la partida. |
 | 33 | El checkpoint del 2.5 se verifica en el paso 7.4. | Pide el popup de carga, que todavía no existe. Decisión de la usuaria: no agregar un panel de prueba ni datos falsos en la base para verificarlo antes. |
 | 34 | El placeholder de `app/index.tsx` lee las plantillas con `usePlantillas` en lugar de llamar al repositorio. | Desde este paso rige que las pantallas no leen repositorios directo. |
+
+Durante el paso 3.1 (tokens):
+
+| # | Cambio | Motivo |
+|---|---|---|
+| 35 | Tipografía (6 estilos, de 12 a 28, fuente del sistema) y espaciado (escala de 4, de 4 a 32) quedan **provisionales**. Los radios se nombran por tamaño (`xs` a `xl`), no por componente. Se suma `numerales` con `tabular-nums` para RNF-4. | El plan fija colores, radios y el área tocable, pero no tipografía ni espaciado, y el mockup no está en el repo. Qué radio usa cada componente se decide en el 3.2, mirándolo en el teléfono. |

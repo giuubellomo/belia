@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { estadoBase } from '@/db/client';
 import { usePlantillas } from '@/hooks/usePlantillas';
+import { colores, espacios, tipografia } from '@/theme/tokens';
 
 /**
  * Placeholder. El Home de verdad es el paso 4.2.
@@ -47,7 +48,7 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
-  contenedor: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24 },
-  texto: { fontSize: 24 },
-  estado: { fontSize: 13, color: '#9A9AA0', textAlign: 'center' },
+  contenedor: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: espacios.sm, padding: espacios.xl },
+  texto: tipografia.subtitulo,
+  estado: { ...tipografia.chico, color: colores.grisMedio, textAlign: 'center' },
 });
