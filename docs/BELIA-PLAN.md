@@ -7,6 +7,7 @@ está escrito para que un agente (Claude Code) lo siga paso a paso, de arriba ha
   acá refieren al documento de requerimientos de BELIA.
 - **Diseño:** el mockup es en escala de grises, estilo wireframe. Las pantallas y su
   comportamiento están definidos en el canvas de diseño.
+  Capturas de las 6 pantallas en `docs/mockup/`.
 
 ---
 
@@ -92,6 +93,7 @@ ni de React.
 BELIA/                        # la raíz del repo es la raíz del proyecto Expo
   docs/
     BELIA-PLAN.md             # este archivo
+    mockup/                   # capturas del canvas de diseño (paso 3.2)
   app/                        # expo-router: una pantalla por archivo
     _layout.tsx
     index.tsx                 # Home
@@ -644,9 +646,10 @@ si más adelante entra color, entra por los tokens y en un solo lugar.
   **Altura mínima de cualquier área tocable: 44** (RNF-3).
 
   **Cómo quedó** (ver registro, cambio 35): `colores`, `radios`, `espacios`, `tipografia`,
-  `AREA_TOCABLE_MINIMA` y `numerales` (RNF-4). Tipografía y espaciado son provisionales.
+  `AREA_TOCABLE_MINIMA` y `numerales` (RNF-4). Tipografía y espaciado quedaron fijos en el
+  paso 3.2, tomados de las capturas del mockup (cambio 38).
 
-- [ ] **3.2 — Componentes base**
+- [x] **3.2 — Componentes base**
 
   En `src/components/`, cada uno con su archivo:
 
@@ -657,6 +660,11 @@ si más adelante entra color, entra por los tokens y en un solo lugar.
 
   **Checkpoint:** una pantalla temporal que renderiza todos los componentes en todos sus
   estados. Miralo en el teléfono, ajustá, y después borrá la pantalla.
+
+  **Cómo quedó** (ver registro, cambios 36 a 40): los diez, más `Etiqueta` y `BotonIcono`.
+  `Avatar` suma `onPress` y `seleccionado` para el selector del paso 4.3. Los íconos son
+  glifos de texto en `src/theme/iconos.ts`. Verificado en el teléfono con la pantalla
+  temporal, que ya se borró.
 
 - [ ] **3.3 — Textos**
 
@@ -968,3 +976,13 @@ Durante el paso 3.1 (tokens):
 | # | Cambio | Motivo |
 |---|---|---|
 | 35 | Tipografía (6 estilos, de 12 a 28, fuente del sistema) y espaciado (escala de 4, de 4 a 32) quedan **provisionales**. Los radios se nombran por tamaño (`xs` a `xl`), no por componente. Se suma `numerales` con `tabular-nums` para RNF-4. | El plan fija colores, radios y el área tocable, pero no tipografía ni espaciado, y el mockup no está en el repo. Qué radio usa cada componente se decide en el 3.2, mirándolo en el teléfono. |
+
+Durante el paso 3.2 (componentes base):
+
+| # | Cambio | Motivo |
+|---|---|---|
+| 36 | **Íconos como glifos de texto** en `src/theme/iconos.ts`, sin dependencia: ✕ ✓ + − ‹ › ↓ ↑ ⚙ para la interfaz, ★ ☀ ☾ ♠ ♥ ♦ ♣ ♪ para avatares, y ⚄ (`cartas`) y ± (`numeral`) para plantillas. Llevan `U+FE0E` para que no se dibujen como emoji de color. | Decisión de la usuaria frente a sumar `@expo/vector-icons`. El mockup usa íconos negros, y los glifos se pintan con el color del texto. En la base se guarda la clave de plantilla, no el glifo, así que el dibujo se cambia sin migrar. |
+| 37 | Dos componentes más: `Etiqueta` (título de sección en mayúsculas) y `BotonIcono` (círculo con borde: ✕, ‹, −/+). `Avatar` suma `onPress`, `seleccionado` (anillo) y `etiqueta`; sin nombre se dibuja liso. | Aparecen en todas las pantallas del mockup. El anillo de selección está en el popup de alta de participante (4.3). |
+| 38 | Tokens nuevos: `grisOscuro` (`#636366`), `velo`, `COLORES_AVATAR`, y los estilos `tituloChico`, `etiqueta`, `boton` y `numeroGrande`. Cada radio quedó asignado: 10 casillas, 12 campos y segmented, 14 botones, 16 cards, 18 popup y sheet. | Salen de las capturas del mockup (`docs/mockup/`). El cuarto gris de avatar no estaba entre los cinco colores del plan. |
+| 39 | Los glifos dentro de un círculo de tamaño fijo (avatar, botón de ícono) no escalan con la fuente del sistema. Todo el resto del texto sí (RNF-7). | Si crecen, se salen del círculo. |
+| 40 | `BottomSheet` usa el `Modal` de React Native con animación propia. Se cierra tocando el velo, con atrás en Android o con la ✕, pero **no se arrastra**. | Arrastrar necesita `react-native-gesture-handler`, que no está en el Stack. |
