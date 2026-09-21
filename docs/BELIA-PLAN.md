@@ -109,7 +109,8 @@ BELIA/                        # la raíz del repo es la raíz del proyecto Expo
       __tests__/
     db/
       client.ts               # apertura de la base
-      schema.sql
+      schema.sql              # fuente de verdad del esquema
+      schema.generated.ts     # derivado del .sql, no se edita (paso 2.2)
       migrations.ts
       seed.ts
     repositories/             # una función por operación, SQL adentro, tipos del dominio afuera
@@ -506,13 +507,21 @@ pegar botones.
 
   **Checkpoint:** el archivo existe y es SQL válido.
 
-- [ ] **2.2 — Conexión y migraciones** (RNF-10)
+- [x] **2.2 — Conexión y migraciones** (RNF-10)
 
   `src/db/client.ts` abre la base con `expo-sqlite`, activa `PRAGMA foreign_keys = ON`
   y corre las migraciones pendientes.
 
   `src/db/migrations.ts` mantiene una lista ordenada de migraciones y usa `user_version`
   de SQLite para saber cuáles faltan. La migración 1 es el esquema del paso 2.1.
+
+  **El SQL llega al bundle como TypeScript.** Metro no importa archivos `.sql`, así que
+  `scripts/generar-schema.mjs` deriva `src/db/schema.generated.ts` desde `schema.sql`.
+  El `.sql` sigue siendo la única fuente de verdad; el `.ts` no se edita a mano. Si tocás
+  el esquema: `npm run db:schema`. Para verificar que no quedó viejo: `npm run db:schema:check`.
+
+  **Una migración publicada no se edita.** Se agrega otra abajo con `version + 1`. Cada una
+  corre en una transacción junto con su `PRAGMA user_version`, así que o entra entera o no entra.
 
   **Checkpoint:** la app arranca, crea el archivo de base y a la segunda corrida no vuelve
   a aplicar la migración 1.
@@ -887,3 +896,12 @@ Durante el paso 0.1 (Expo SDK 57):
 | 16 | `tsconfig.jest.json` propio, que no extiende el de Expo (paso 0.3). | `module: preserve` + `moduleResolution: bundler` no corren en jest, y no se pisan de a una sin chocar con `customConditions`. |
 | 17 | `npm test` llevó `--passWithNoTests` entre 0.3 y 1.4, y se removió al cerrar 1.4. | Necesario para que 0 tests no fallara con el dominio vacío; peligroso de dejar una vez que hay tests. |
 | 18 | `tsconfig.json` declara `"types": ["jest"]` (anotado en 0.2, surge en 1.2). | TypeScript 6 no auto-incluye `node_modules/@types`. Sin eso, `typecheck` falla en los tests con `TS2593` aunque `npm test` pase. |
+
+Durante el paso 2.2 (conexión y migraciones):
+
+| # | Cambio | Motivo |
+|---|---|---|
+| 19 | `src/db/schema.generated.ts`, generado desde `schema.sql` por `scripts/generar-schema.mjs`, con los scripts `db:schema` y `db:schema:check`. | Metro no sabe importar `.sql`. Las alternativas eran copiar el SQL a mano en un `.ts` (dos copias que se desincronizan) o cablear un loader de assets (dependencias y complejidad que el plan no autoriza). |
+| 20 | `client.ts` expone `estadoBase()` y el placeholder de `app/index.tsx` lo muestra. | La mitad del checkpoint («la app arranca y crea el archivo») solo se ve en el teléfono. Es temporal: se va en el paso 4.2. El SQL queda en `db/`, no en la pantalla. |
+| 21 | `migrar()` corta con error si `user_version` es mayor que la versión que conoce el build. | Una app vieja abriendo datos nuevos corrompe en silencio. Cuesta cuatro líneas detectarlo. |
+| 22 | `journal_mode = WAL` además del `foreign_keys = ON` que pedía el paso. | Es la recomendación de la doc de expo-sqlite para SDK 57, y tiene que ir antes de abrir cualquier transacción. |

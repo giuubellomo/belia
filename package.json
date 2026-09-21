@@ -31,7 +31,9 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
-    "test": "jest"
+    "test": "jest",
+    "db:schema": "node scripts/generar-schema.mjs",
+    "db:schema:check": "node scripts/generar-schema.mjs --check"
   },
   "private": true
 }
