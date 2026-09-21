@@ -526,7 +526,7 @@ pegar botones.
   **Checkpoint:** la app arranca, crea el archivo de base y a la segunda corrida no vuelve
   a aplicar la migración 1.
 
-- [ ] **2.3 — Repositorios**
+- [x] **2.3 — Repositorios**
 
   Un archivo por agregado en `src/repositories/`. Cada función recibe y devuelve **tipos del
   dominio**, nunca filas crudas: el mapeo `snake_case` → `camelCase` vive acá y en ningún
@@ -546,8 +546,19 @@ pegar botones.
   `partidas.obtener` devuelve el tipo `Partida` del paso 1.1, con el snapshot ya parseado.
   Ese es el objeto que consumen las funciones puras de la fase 1.
 
+  **Cómo quedó** (ver registro, cambios 23 a 27):
+  - Las rondas de una partida se nombran por su **número**, como en `RondaJugada`. Los ids
+    de `ronda_partida` no salen del repositorio.
+  - `abrirRonda` no es una función aparte: abrir la siguiente es parte de `cerrarRonda`.
+  - Los repositorios validan lo que la base no puede: una sola partida en curso (A-5),
+    puntaje manual entero y positivo (A-2), predefinidas intocables (RF-303), ronda
+    bloqueada o partida finalizada no se editan, y `cerrarRonda` exige `puedeCerrarRonda`.
+  - Todo acceso pasa por `leer` / `escribir` de `db/client.ts`. Adentro de una tarea se usa
+    el `db` que llega por parámetro, nunca otra función pública de un repositorio.
+
   **Checkpoint:** `npm run typecheck` pasa y ningún archivo fuera de `repositories/`
-  contiene SQL.
+  contiene SQL. `db/` queda afuera de esa regla: esquema, migraciones y control de
+  transacciones son la infraestructura del paso 2.2.
 
 - [ ] **2.4 — Semilla de plantillas predefinidas** (RF-301)
 
@@ -905,3 +916,13 @@ Durante el paso 2.2 (conexión y migraciones):
 | 20 | `client.ts` expone `estadoBase()` y el placeholder de `app/index.tsx` lo muestra. | La mitad del checkpoint («la app arranca y crea el archivo») solo se ve en el teléfono. Es temporal: se va en el paso 4.2. El SQL queda en `db/`, no en la pantalla. |
 | 21 | `migrar()` corta con error si `user_version` es mayor que la versión que conoce el build. | Una app vieja abriendo datos nuevos corrompe en silencio. Cuesta cuatro líneas detectarlo. |
 | 22 | `journal_mode = WAL` además del `foreign_keys = ON` que pedía el paso. | Es la recomendación de la doc de expo-sqlite para SDK 57, y tiene que ir antes de abrir cualquier transacción. |
+
+Durante el paso 2.3 (repositorios):
+
+| # | Cambio | Motivo |
+|---|---|---|
+| 23 | `db/client.ts` expone `leer` y `escribir`: una cola que ejecuta de a una operación, y transacciones (`BEGIN IMMEDIATE`) sobre la conexión principal. No se usa `withExclusiveTransactionAsync`. | `withExclusiveTransactionAsync` abre una conexión nueva, y ahí `foreign_keys` está apagado: los `ON DELETE CASCADE` no correrían y entrarían referencias rotas sin error. Leído en el código de `expo-sqlite` 57. |
+| 24 | `abrirRonda` no existe como función pública: `cerrarRonda` cierra la ronda y abre la siguiente (o la crea, con rondas ilimitadas) en la misma transacción. | Separadas, un corte entre las dos llamadas deja la partida sin ronda en curso (RNF-2). El paso 7.6 ya descarta reabrir una ronda cerrada. |
+| 25 | `plantillas.listar` y `obtener` devuelven `PlantillaGuardada` = `Plantilla` + `esPredefinida`. Es un tipo del repositorio, no del dominio, y el snapshot de la partida no lo incluye. | La lista del paso 5.1 necesita el candado y `Plantilla` no tiene ese campo. No se tocó el modelo del paso 1.1. |
+| 26 | `repositories/comun.ts` genera los uuid con `globalThis.expo.uuidv4()`. | Viene con el runtime nativo de Expo (`expo-modules-core`). Evita sumar `expo-crypto` o `uuid`, que no están en el Stack. |
+| 27 | En `plantillas.crear` y `actualizar`, las reglas llegan con su id ya puesto; el id de la plantilla lo pone el repositorio. | Los ajustes de cada ronda apuntan a la regla por id. El editor (5.3) necesita ese id antes de guardar, y lo saca de `nuevoId()`. |

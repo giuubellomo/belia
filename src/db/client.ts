@@ -38,6 +38,48 @@ async function abrir(): Promise<SQLite.SQLiteDatabase> {
   return db;
 }
 
+/*
+ * Acceso para los repositorios (paso 2.3).
+ *
+ * Todo pasa por una cola: una operacion por vez, en el orden en que se pidieron.
+ * No usamos withExclusiveTransactionAsync porque abre una conexion nueva, y en esa
+ * conexion `foreign_keys` esta apagado: los ON DELETE CASCADE no correrian y las
+ * referencias rotas entrarian sin error. Las transacciones van sobre la conexion
+ * principal, y la cola garantiza que nada se meta en el medio.
+ *
+ * Adentro de una tarea no se llama a `leer` ni a `escribir`: esperaria a que termine
+ * la tarea que la llamo y no terminaria nunca. Se usa el `db` que llega por parametro.
+ */
+let cola: Promise<unknown> = Promise.resolve();
+
+function encolar<T>(tarea: () => Promise<T>): Promise<T> {
+  const resultado = cola.then(tarea);
+  // La cola sigue aunque una tarea falle: el error le llega a quien la pidio.
+  cola = resultado.catch(() => undefined);
+  return resultado;
+}
+
+/** Lecturas: sin transaccion, pero sin pisarse con una escritura a medias. */
+export function leer<T>(tarea: (db: SQLite.SQLiteDatabase) => Promise<T>): Promise<T> {
+  return encolar(async () => tarea(await obtenerBase()));
+}
+
+/** Escrituras: o entra todo lo que hace la tarea, o no entra nada (RNF-2). */
+export function escribir<T>(tarea: (db: SQLite.SQLiteDatabase) => Promise<T>): Promise<T> {
+  return encolar(async () => {
+    const db = await obtenerBase();
+    await db.execAsync('BEGIN IMMEDIATE');
+    try {
+      const resultado = await tarea(db);
+      await db.execAsync('COMMIT');
+      return resultado;
+    } catch (error) {
+      await db.execAsync('ROLLBACK');
+      throw error;
+    }
+  });
+}
+
 /** Solo para tests y para el reset de la pantalla de configuracion (fase 9). */
 export async function cerrarBase(): Promise<void> {
   if (conexion === null) return;
