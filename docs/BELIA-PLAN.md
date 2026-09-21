@@ -560,7 +560,7 @@ pegar botones.
   contiene SQL. `db/` queda afuera de esa regla: esquema, migraciones y control de
   transacciones son la infraestructura del paso 2.2.
 
-- [ ] **2.4 — Semilla de plantillas predefinidas** (RF-301)
+- [x] **2.4 — Semilla de plantillas predefinidas** (RF-301)
 
   `src/db/seed.ts` corre una sola vez, en la primera apertura, e inserta:
 
@@ -583,6 +583,11 @@ pegar botones.
 
   **Simple** — `modoPuntos: 'suma'`, `criterioVictoria: 'mayor'`, `rondasIlimitadas: true`,
   sin reglas y sin rondas definidas.
+
+  **Cómo quedó** (ver registro, cambios 28 a 31): las predefinidas tienen ids fijos y
+  `app/_layout.tsx` llama a `sembrar()` en cada arranque, antes de montar las pantallas.
+  `plantillas.asegurarPredefinidas` inserta solo las que falten, así que la primera vez
+  entran las dos y después no entra nada.
 
   **Checkpoint:** en una base recién creada, `plantillas.listar()` devuelve las dos, Karioka
   con 2 reglas y 7 rondas. Borrar la app y reinstalar vuelve a sembrarlas sin duplicar.
@@ -926,3 +931,12 @@ Durante el paso 2.3 (repositorios):
 | 25 | `plantillas.listar` y `obtener` devuelven `PlantillaGuardada` = `Plantilla` + `esPredefinida`. Es un tipo del repositorio, no del dominio, y el snapshot de la partida no lo incluye. | La lista del paso 5.1 necesita el candado y `Plantilla` no tiene ese campo. No se tocó el modelo del paso 1.1. |
 | 26 | `repositories/comun.ts` genera los uuid con `globalThis.expo.uuidv4()`. | Viene con el runtime nativo de Expo (`expo-modules-core`). Evita sumar `expo-crypto` o `uuid`, que no están en el Stack. |
 | 27 | En `plantillas.crear` y `actualizar`, las reglas llegan con su id ya puesto; el id de la plantilla lo pone el repositorio. | Los ajustes de cada ronda apuntan a la regla por id. El editor (5.3) necesita ese id antes de guardar, y lo saca de `nuevoId()`. |
+
+Durante el paso 2.4 (semilla):
+
+| # | Cambio | Motivo |
+|---|---|---|
+| 28 | La semilla no corre «una sola vez» con una marca: corre en cada arranque desde `app/_layout.tsx`, y `plantillas.asegurarPredefinidas` inserta por id fijo solo las que falten, chequeando e insertando en la misma transacción. `plantillas.crear` ya no acepta la opción `predefinida`. | No puede correr dentro de `obtenerBase`: `escribir` esperaría a la apertura que la está llamando y la app quedaría colgada. Con ids fijos es idempotente, y una predefinida que se sume en un build futuro entra sola. |
+| 29 | La ronda 1 de Karioka no guarda ajuste: vale −10, igual que el base. | El editor (5.4) guarda un ajuste solo si difiere del base y lo muestra como «ajustado». Con el ajuste guardado, la ronda 1 aparecería ajustada sin estarlo. El puntaje que vale no cambia. |
+| 30 | `icono` de las predefinidas: claves provisionales `cartas` y `numeral`. | El plan no fija el set de íconos; lo define el sistema de diseño (fase 3). Si cambia, se corrige con una migración. |
+| 31 | El placeholder de `app/index.tsx` suma una línea con las plantillas y llama a `plantillas.listar()` directo. | Es la mitad visible del checkpoint. Temporal como la del 2.2: se va con el paso 4.2, y los hooks recién llegan en el 2.5. |

@@ -7,6 +7,7 @@
  * el editor modifica el objeto y lo manda completo.
  *
  * Las predefinidas (RF-303) se leen y se duplican, pero no se editan ni se borran.
+ * Solo entran por `asegurarPredefinidas`, que es lo que usa la semilla (paso 2.4).
  */
 import type { SQLiteDatabase } from 'expo-sqlite';
 
@@ -74,12 +75,29 @@ export function obtener(id: string): Promise<PlantillaGuardada | null> {
   return leer((db) => plantillaDesdeBase(db, id));
 }
 
-/** `predefinida` es para la semilla del paso 2.4. */
-export function crear(
-  datos: DatosPlantilla,
-  opciones: { predefinida?: boolean } = {},
-): Promise<PlantillaGuardada> {
-  return escribir((db) => insertar(db, datos, opciones.predefinida === true));
+/** Una plantilla propia. Para las predefinidas esta `asegurarPredefinidas`. */
+export function crear(datos: DatosPlantilla): Promise<PlantillaGuardada> {
+  return escribir((db) => insertar(db, nuevoId(), datos, false));
+}
+
+/**
+ * Inserta como predefinidas las que todavia no estan, buscandolas por id, y
+ * devuelve cuantas inserto. Las que ya estan no se tocan: correrla en cada
+ * arranque no duplica nada. Chequeo e insercion van en la misma transaccion.
+ */
+export function asegurarPredefinidas(predefinidas: Plantilla[]): Promise<number> {
+  return escribir(async (db) => {
+    let insertadas = 0;
+    for (const plantilla of predefinidas) {
+      const existe = await db.getFirstAsync<{ id: string }>('SELECT id FROM plantilla WHERE id = ?', [
+        plantilla.id,
+      ]);
+      if (existe !== null) continue;
+      await insertar(db, plantilla.id, plantilla, true);
+      insertadas += 1;
+    }
+    return insertadas;
+  });
 }
 
 /** Reemplaza datos generales, reglas y rondas por lo que trae `plantilla`. */
@@ -139,7 +157,7 @@ export function duplicar(id: string, nombre: string): Promise<PlantillaGuardada>
       })),
     };
 
-    return insertar(db, copia, false);
+    return insertar(db, nuevoId(), copia, false);
   });
 }
 
@@ -243,10 +261,10 @@ function aRonda(fila: FilaRonda, ajustes: FilaAjuste[]): RondaDefinida {
 
 async function insertar(
   db: SQLiteDatabase,
+  id: string,
   datos: DatosPlantilla,
   predefinida: boolean,
 ): Promise<PlantillaGuardada> {
-  const id = nuevoId();
   const momento = ahora();
 
   await db.runAsync(
