@@ -680,10 +680,14 @@ si más adelante entra color, entra por los tokens y en un solo lugar.
 
 # Fase 4 — Home y participantes
 
-- [ ] **4.1 — Alta del dueño del dispositivo** (RF-205, RF-901)
+- [x] **4.1 — Alta del dueño del dispositivo** (RF-205, RF-901)
 
   En el primer arranque, si no hay participante con `es_dueno = 1`, pedir nombre y avatar
   antes de mostrar el home.
+
+  **Cómo quedó** (ver registro, cambios 42 a 44): `app/bienvenida.tsx`, una pantalla con la
+  marca arriba y el formulario del popup «Agregar participante» abajo. `_layout.tsx` la
+  muestra con `Stack.Protected` mientras no hay dueño.
 
   **Checkpoint:** primera corrida pide los datos; la segunda va directo al home.
 
@@ -997,3 +1001,11 @@ Durante el paso 3.3 (textos):
 | # | Cambio | Motivo |
 |---|---|---|
 | 41 | `es.ts` también lleva los textos que solo oye el lector de pantalla (`Cerrar`, `Sumar`…) y `conSigno()`, que escribe los puntajes con `−` (U+2212) como el mockup. Los mensajes de validación y de confirmación que el mockup no muestra (nombre vacío o repetido, puntaje cero, «¿Terminar la partida?») son **propuestas**: se revisan en el paso que los usa. No entran los datos de la base (nombres de plantilla, reglas, objetivos). | La regla es «ningún texto visible suelto», y un texto para accesibilidad es igual de visible para quien lo usa. Los datos no son interfaz: la usuaria los edita. |
+
+Durante el paso 4.1 (alta del dueño):
+
+| # | Cambio | Motivo |
+|---|---|---|
+| 42 | **Pantalla nueva**, `app/bienvenida.tsx`: «BELIA» y el subtítulo arriba, y abajo el mismo formulario del popup «Agregar participante», sin botón Cancelar. | El mockup no tiene pantalla para el alta del dueño. La eligió la usuaria entre esta y reusar el popup sobre el Home. |
+| 43 | `_layout.tsx` usa `Stack.Protected` con un hook nuevo, `useDueno()`: sin dueño solo existe la bienvenida; al crearlo, el guard cambia y el router pasa al Home sacando la bienvenida del historial. | Es el mecanismo de expo-router para esto. Evita redirecciones a mano y que el botón atrás vuelva a la bienvenida. |
+| 44 | El formulario es un componente, `FormularioParticipante`, y la validación del nombre (RF-202) está en `src/domain/participantes.ts` con tests: obligatorio, máximo 20 caracteres reales, sin repetir entre activos ignorando mayúsculas y espacios. | El 4.3 usa el mismo formulario. Validar es lógica pura: va al dominio y se prueba ahí, no dentro de un componente. |

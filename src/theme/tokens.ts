@@ -60,6 +60,8 @@ export const AREA_TOCABLE_MINIMA = 44;
  * icono), que si crece se sale del circulo.
  */
 export const tipografia = {
+  /** «BELIA» en el Home y la bienvenida. */
+  marca: { fontSize: 40, lineHeight: 46, fontWeight: '800', letterSpacing: 2 },
   titulo: { fontSize: 28, lineHeight: 34, fontWeight: '700' },
   subtitulo: { fontSize: 20, lineHeight: 26, fontWeight: '700' },
   tituloChico: { fontSize: 17, lineHeight: 22, fontWeight: '700' },

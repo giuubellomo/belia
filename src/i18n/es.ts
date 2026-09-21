@@ -32,6 +32,13 @@ export const es = {
     sumar: 'Sumar',
     restar: 'Restar',
     puntos: (n: number) => `${conSigno(n)} pts`,
+    errorGuardar: 'No se pudo guardar. Probá de nuevo.',
+  },
+
+  bienvenida: {
+    titulo: 'Antes de empezar',
+    texto: 'Contanos cómo te llamás y elegí tu avatar. En las partidas vas a aparecer como «Tú».',
+    continuar: 'CONTINUAR',
   },
 
   home: {
@@ -67,9 +74,11 @@ export const es = {
     nombreEjemplo: 'Ej: Sol',
     iconoOColor: 'Ícono o color',
     // RF-202: validaciones del alta
-    errorNombreVacio: 'Poné un nombre',
-    errorNombreLargo: (maximo: number) => `Máximo ${maximo} caracteres`,
-    errorNombreRepetido: 'Ya hay un participante con ese nombre',
+    errorNombre: {
+      vacio: 'Poné un nombre',
+      largo: 'Máximo 20 caracteres',
+      repetido: 'Ya hay un participante con ese nombre',
+    },
     // Lector de pantalla, en el selector de avatar
     colorNumero: (n: number) => `Color ${n}`,
     icono: (glifo: string) => `Ícono ${glifo}`,
