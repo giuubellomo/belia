@@ -592,7 +592,7 @@ pegar botones.
   **Checkpoint:** en una base recién creada, `plantillas.listar()` devuelve las dos, Karioka
   con 2 reglas y 7 rondas. Borrar la app y reinstalar vuelve a sembrarlas sin duplicar.
 
-- [ ] **2.5 — Hooks: cómo la pantalla se entera de que la base cambió** (RNF-2)
+- [x] **2.5 — Hooks: cómo la pantalla se entera de que la base cambió** (RNF-2)
 
   Este paso define el único patrón de acceso a datos de toda la app. Resolvelo acá, con la
   cabeza fría, y no en medio de la fase 7.
@@ -619,8 +619,15 @@ pegar botones.
 
   Lo mismo para `usePartidaEnCurso()`, `useParticipantes()` y `usePlantillas()`.
 
+  **Cómo quedó** (ver registro, cambios 32 a 34): la base común es `useConsulta` en
+  `src/hooks/useConsulta.ts`. `mutar` recarga **todos** los hooks montados, no solo el que la
+  llamó, y devuelve lo que devuelva la escritura. Las pantallas leen solo con hooks y
+  escriben pasando la llamada al repositorio adentro de `mutar`.
+
   **Checkpoint:** con la partida abierta, guardar un puntaje desde el popup actualiza la fila
   y el acumulado sin que ninguna pantalla haga `setState` sobre datos de la base a mano.
+  **Se verifica en el paso 7.4**, que es cuando existe el popup (cambio 33). Al cerrar el 2.5
+  se verificó `npm run typecheck`.
 
 ---
 
@@ -787,6 +794,10 @@ escribiendo una suma dentro de un componente, está mal.
   **Checkpoint:** marcar «bajó primero» a un participante se lo saca al anterior,
   y los totales de los dos se actualizan.
 
+  **Checkpoint pendiente del 2.5:** guardar un puntaje desde el popup actualiza la fila y el
+  acumulado sin ningún `setState` manual sobre datos de la base. Si no pasa, el problema
+  está en `src/hooks/useConsulta.ts`, no en esta pantalla.
+
 - [ ] **7.5 — Avanzar de ronda** (RF-706, RF-707, RF-708)
 
   `SIGUIENTE` habilitado según `puedeCerrarRonda`. Si falta una regla de alcance `todas`,
@@ -940,3 +951,11 @@ Durante el paso 2.4 (semilla):
 | 29 | La ronda 1 de Karioka no guarda ajuste: vale −10, igual que el base. | El editor (5.4) guarda un ajuste solo si difiere del base y lo muestra como «ajustado». Con el ajuste guardado, la ronda 1 aparecería ajustada sin estarlo. El puntaje que vale no cambia. |
 | 30 | `icono` de las predefinidas: claves provisionales `cartas` y `numeral`. | El plan no fija el set de íconos; lo define el sistema de diseño (fase 3). Si cambia, se corrige con una migración. |
 | 31 | El placeholder de `app/index.tsx` suma una línea con las plantillas y llama a `plantillas.listar()` directo. | Es la mitad visible del checkpoint. Temporal como la del 2.2: se va con el paso 4.2, y los hooks recién llegan en el 2.5. |
+
+Durante el paso 2.5 (hooks):
+
+| # | Cambio | Motivo |
+|---|---|---|
+| 32 | `mutar` es una sola función para toda la app: después de escribir recarga **todos** los hooks montados, no solo el que la llamó. Es genérica: devuelve lo que devuelva la escritura. Los hooks exponen además `error`. | El Home queda montado debajo de la partida en el stack: si solo recargara el hook que escribió, al volver mostraría datos viejos. Que devuelva el resultado es para `partidas.crear`, que el paso 6.2 necesita para navegar a la partida. |
+| 33 | El checkpoint del 2.5 se verifica en el paso 7.4. | Pide el popup de carga, que todavía no existe. Decisión de la usuaria: no agregar un panel de prueba ni datos falsos en la base para verificarlo antes. |
+| 34 | El placeholder de `app/index.tsx` lee las plantillas con `usePlantillas` en lugar de llamar al repositorio. | Desde este paso rige que las pantallas no leen repositorios directo. |
