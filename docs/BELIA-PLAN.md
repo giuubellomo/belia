@@ -666,10 +666,15 @@ si más adelante entra color, entra por los tokens y en un solo lugar.
   glifos de texto en `src/theme/iconos.ts`. Verificado en el teléfono con la pantalla
   temporal, que ya se borró.
 
-- [ ] **3.3 — Textos**
+- [x] **3.3 — Textos**
 
   `src/i18n/es.ts` con todas las cadenas de interfaz. Ningún texto visible se escribe
   suelto en un componente.
+
+  **Cómo quedó** (ver registro, cambio 41): un objeto `es` por pantalla, con funciones para
+  los textos que llevan un dato, y `conSigno()` para mostrar puntajes con el signo menos
+  tipográfico. Incluye los textos del mockup y los que ya fija el plan (A-4, A-5, RF-202,
+  RF-404, RF-706).
 
 ---
 
@@ -986,3 +991,9 @@ Durante el paso 3.2 (componentes base):
 | 38 | Tokens nuevos: `grisOscuro` (`#636366`), `velo`, `COLORES_AVATAR`, y los estilos `tituloChico`, `etiqueta`, `boton` y `numeroGrande`. Cada radio quedó asignado: 10 casillas, 12 campos y segmented, 14 botones, 16 cards, 18 popup y sheet. | Salen de las capturas del mockup (`docs/mockup/`). El cuarto gris de avatar no estaba entre los cinco colores del plan. |
 | 39 | Los glifos dentro de un círculo de tamaño fijo (avatar, botón de ícono) no escalan con la fuente del sistema. Todo el resto del texto sí (RNF-7). | Si crecen, se salen del círculo. |
 | 40 | `BottomSheet` usa el `Modal` de React Native con animación propia. Se cierra tocando el velo, con atrás en Android o con la ✕, pero **no se arrastra**. | Arrastrar necesita `react-native-gesture-handler`, que no está en el Stack. |
+
+Durante el paso 3.3 (textos):
+
+| # | Cambio | Motivo |
+|---|---|---|
+| 41 | `es.ts` también lleva los textos que solo oye el lector de pantalla (`Cerrar`, `Sumar`…) y `conSigno()`, que escribe los puntajes con `−` (U+2212) como el mockup. Los mensajes de validación y de confirmación que el mockup no muestra (nombre vacío o repetido, puntaje cero, «¿Terminar la partida?») son **propuestas**: se revisan en el paso que los usa. No entran los datos de la base (nombres de plantilla, reglas, objetivos). | La regla es «ningún texto visible suelto», y un texto para accesibilidad es igual de visible para quien lo usa. Los datos no son interfaz: la usuaria los edita. |

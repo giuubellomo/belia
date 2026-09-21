@@ -3,11 +3,13 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { estadoBase } from '@/db/client';
 import { usePlantillas } from '@/hooks/usePlantillas';
+import { es } from '@/i18n/es';
 import { colores, espacios, tipografia } from '@/theme/tokens';
 
 /**
  * Placeholder. El Home de verdad es el paso 4.2.
  * El cartel de la base es temporal: es el checkpoint de los pasos 2.2 y 2.4 y se va con el 4.2.
+ * Las lineas grises son diagnostico para desarrollo y no pasan por i18n: se van con el 4.2.
  * `estadoBase` es un diagnostico de db/, no un repositorio: por eso no pasa por un hook.
  */
 export default function Home() {
@@ -40,7 +42,7 @@ export default function Home() {
 
   return (
     <View style={styles.contenedor}>
-      <Text style={styles.texto}>BELIA</Text>
+      <Text style={styles.texto}>{es.home.titulo}</Text>
       <Text style={styles.estado}>{estado}</Text>
       <Text style={styles.estado}>{resumen}</Text>
     </View>
