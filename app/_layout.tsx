@@ -47,7 +47,7 @@ function Navegacion() {
         <Stack.Screen name="bienvenida" options={{ headerShown: false }} />
       </Stack.Protected>
       <Stack.Protected guard={hayDueno}>
-        <Stack.Screen name="index" />
+        <Stack.Screen name="index" options={{ headerShown: false }} />
       </Stack.Protected>
     </Stack>
   );

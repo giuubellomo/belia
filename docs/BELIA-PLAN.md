@@ -691,7 +691,7 @@ si más adelante entra color, entra por los tokens y en un solo lugar.
 
   **Checkpoint:** primera corrida pide los datos; la segunda va directo al home.
 
-- [ ] **4.2 — Home** (RF-101 a RF-105)
+- [x] **4.2 — Home** (RF-101 a RF-105)
 
   `app/index.tsx`. Consulta `partidas.obtenerEnCurso()` (vía `usePartidaEnCurso`, paso 2.5):
   - hay partida → se muestran las dos acciones, con plantilla, cantidad de jugadores y ronda
@@ -704,7 +704,15 @@ si más adelante entra color, entra por los tokens y en un solo lugar.
 
   Abajo, los dos íconos: configuración y plantillas (todavía pueden no navegar a nada).
 
+  **Cómo quedó** (ver registro, cambios 45 a 48): `app/index.tsx` con la marca arriba, las
+  acciones abajo al alcance del pulgar y el pie con los dos íconos sobre una línea fina.
+  El resumen de la partida usa `numeroRondaEnCurso()`, nuevo en el dominio. La confirmación
+  de A-5 es un `Popup` con Cancelar y Terminar. Se fue el placeholder de diagnóstico de los
+  pasos 2.2 y 2.4, y el Home quedó sin header.
+
   **Checkpoint:** las dos variantes del home se ven según haya o no partida en curso.
+  Verificada en el teléfono la variante **sin partida**; la de partida en curso queda para
+  el paso 6.2 (cambio 48).
 
 - [ ] **4.3 — Crear y editar participantes** (RF-201 a RF-204)
 
@@ -1009,3 +1017,12 @@ Durante el paso 4.1 (alta del dueño):
 | 42 | **Pantalla nueva**, `app/bienvenida.tsx`: «BELIA» y el subtítulo arriba, y abajo el mismo formulario del popup «Agregar participante», sin botón Cancelar. | El mockup no tiene pantalla para el alta del dueño. La eligió la usuaria entre esta y reusar el popup sobre el Home. |
 | 43 | `_layout.tsx` usa `Stack.Protected` con un hook nuevo, `useDueno()`: sin dueño solo existe la bienvenida; al crearlo, el guard cambia y el router pasa al Home sacando la bienvenida del historial. | Es el mecanismo de expo-router para esto. Evita redirecciones a mano y que el botón atrás vuelva a la bienvenida. |
 | 44 | El formulario es un componente, `FormularioParticipante`, y la validación del nombre (RF-202) está en `src/domain/participantes.ts` con tests: obligatorio, máximo 20 caracteres reales, sin repetir entre activos ignorando mayúsculas y espacios. | El 4.3 usa el mismo formulario. Validar es lógica pura: va al dominio y se prueba ahí, no dentro de un componente. |
+
+Durante el paso 4.2 (Home):
+
+| # | Cambio | Motivo |
+|---|---|---|
+| 45 | `numeroRondaEnCurso()` en `src/domain/rondas.ts`, con tests, aunque la fase 1 estaba cerrada. | El resumen del Home muestra en qué ronda va, y esa ronda se deriva del estado de `ronda_partida` (cambio 3). Escrita en la pantalla sería lógica fuera del dominio y sin forma de probarla. Con rondas ilimitadas, o con la última cerrada, no hay ninguna `en_curso`: devuelve la última. |
+| 46 | Las cuatro acciones del Home quedan tocables pero sin destino: «Continuar partida» (paso 7.1), el armado de «Nuevo juego» (6.1), Configuración (9.1) y Agregar plantilla (5.1). | El plan ya lo permitía para los dos íconos del pie; las otras dos pantallas tampoco existen todavía y navegar a una ruta inexistente rompe el router. Cada una está marcada con el paso que la cablea. |
+| 47 | Ícono nuevo `plantillaNueva` (`⊞`) y el Home sin header (`headerShown: false` en `_layout.tsx`). El popup de A-5 reusa `es.finalizar.confirmarTitulo` como título, con `es.home.terminarAnterior(nombre)` como texto. | El mockup muestra un ícono de grilla con un `+` para «Agregar plantilla» y ninguna barra de título. El texto de confirmación estaba marcado como propuesta en el cambio 41: se confirma acá. |
+| 48 | La mitad del checkpoint que pide una partida en curso se verifica en el paso 6.2. | Ninguna pantalla crea partidas hasta ese paso. Misma decisión de la usuaria que el cambio 33: no meter datos falsos en la base para adelantar una verificación. El cálculo de la ronda queda cubierto por los tests del cambio 45. |

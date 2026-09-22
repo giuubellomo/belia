@@ -128,3 +128,16 @@ export function desmarcarRegla(
 
   return { ...ronda, entradas };
 }
+
+/**
+ * El numero de la ronda que se esta jugando (RF-102, cambio 3 del registro: la
+ * ronda en curso se deriva del estado, no hay campo `ronda_actual`).
+ *
+ * Si ninguna esta en curso -- la ultima se cerro y la plantilla no tiene mas --
+ * vale la ultima ronda, que es hasta donde llego la partida.
+ */
+export function numeroRondaEnCurso(rondas: RondaJugada[]): number {
+  const enCurso = rondas.find((ronda) => ronda.estado === 'en_curso');
+  if (enCurso !== undefined) return enCurso.numero;
+  return rondas.reduce((mayor, ronda) => Math.max(mayor, ronda.numero), 1);
+}

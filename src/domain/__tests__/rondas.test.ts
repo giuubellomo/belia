@@ -1,6 +1,7 @@
 import {
   desmarcarRegla,
   marcarRegla,
+  numeroRondaEnCurso,
   puedeCerrarRonda,
   puntajeDeReglaEnRonda,
   reglasSinAsignar,
@@ -284,5 +285,30 @@ describe('desmarcarRegla', () => {
     const vuelta = desmarcarRegla(ida, 'bajo', 'a');
 
     expect(vuelta).toEqual(r);
+  });
+});
+
+// --- numeroRondaEnCurso (RF-102, resumen del Home) -----------------------
+
+describe('numeroRondaEnCurso', () => {
+  /** Rondas con estado explicito: el ayudante `ronda` las deja todas en curso. */
+  function rondas(...estados: RondaJugada['estado'][]): RondaJugada[] {
+    return estados.map((estado, i) => ({ numero: i + 1, estado, entradas: [] }));
+  }
+
+  it('devuelve la ronda que esta en curso', () => {
+    expect(numeroRondaEnCurso(rondas('cerrada', 'en_curso', 'bloqueada'))).toBe(2);
+  });
+
+  it('con todas cerradas devuelve la ultima: es hasta donde llego la partida', () => {
+    expect(numeroRondaEnCurso(rondas('cerrada', 'cerrada', 'cerrada'))).toBe(3);
+  });
+
+  it('recien creada, la ronda en curso es la 1', () => {
+    expect(numeroRondaEnCurso(rondas('en_curso', 'bloqueada'))).toBe(1);
+  });
+
+  it('sin rondas devuelve 1, no 0 ni NaN', () => {
+    expect(numeroRondaEnCurso([])).toBe(1);
   });
 });

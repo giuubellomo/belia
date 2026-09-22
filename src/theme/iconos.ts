@@ -18,6 +18,8 @@ export const iconos = {
   abajo: '↓',
   arriba: '↑',
   engranaje: `⚙${TEXTO}`,
+  /** «Agregar plantilla» en el pie del Home (paso 4.2). */
+  plantillaNueva: '⊞',
 } as const;
 
 /** Los que se pueden elegir para un avatar (RF-201). `valor` del avatar = el glifo. */
