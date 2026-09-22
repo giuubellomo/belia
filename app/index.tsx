@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -26,6 +27,7 @@ import { colores, espacios, tipografia } from '@/theme/tokens';
  * pide confirmacion para terminar la anterior. Nunca hay dos `en_curso`.
  */
 export default function Home() {
+  const router = useRouter();
   const { partida, cargando, mutar } = usePartidaEnCurso();
   const [confirmando, setConfirmando] = useState(false);
   const [errorAlTerminar, setErrorAlTerminar] = useState(false);
@@ -74,9 +76,13 @@ export default function Home() {
       </View>
 
       <View style={styles.pie}>
-        {/* Paso 9.1 y paso 5.1: las dos pantallas todavia no existen. */}
+        {/* Configuracion es el paso 9.1: todavia no existe. */}
         <AccionDePie icono={iconos.engranaje} texto={es.home.configuracion} onPress={() => {}} />
-        <AccionDePie icono={iconos.plantillaNueva} texto={es.home.agregarPlantilla} onPress={() => {}} />
+        <AccionDePie
+          icono={iconos.plantillaNueva}
+          texto={es.home.plantillas}
+          onPress={() => router.push('/plantillas')}
+        />
       </View>
 
       {partida !== null && (

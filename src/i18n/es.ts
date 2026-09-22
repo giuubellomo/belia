@@ -51,7 +51,8 @@ export const es = {
     nuevoJuego: 'Nuevo juego',
     sinPartidas: 'Todavía no tenés partidas guardadas',
     configuracion: 'Configuración',
-    agregarPlantilla: 'Agregar plantilla',
+    /** El mockup dice «Agregar plantilla»; el icono abre la lista (ver registro, cambio 51). */
+    plantillas: 'Plantillas',
     // A-5: confirmacion al tocar «Nuevo juego» con una partida abierta
     terminarAnterior: (nombre: string) => `Terminá "${nombre}" para empezar una nueva`,
   },
@@ -84,6 +85,27 @@ export const es = {
     // Lector de pantalla, en el selector de avatar
     colorNumero: (n: number) => `Color ${n}`,
     icono: (glifo: string) => `Ícono ${glifo}`,
+  },
+
+  /** La lista (paso 5.1). El editor de una plantilla es `plantilla`, mas abajo. */
+  plantillas: {
+    titulo: 'Plantillas',
+    predefinida: 'Predefinida',
+    /** «3 reglas · 7 rondas», «2 reglas · rondas libres» */
+    resumen: (reglas: number, rondas: number | null) => {
+      const cuantasReglas = reglas === 1 ? '1 regla' : `${reglas} reglas`;
+      const cuantasRondas = rondas === null ? 'rondas libres' : rondas === 1 ? '1 ronda' : `${rondas} rondas`;
+      return `${cuantasReglas} · ${cuantasRondas}`;
+    },
+    duplicar: 'Duplicar',
+    borrar: 'Borrar',
+    /** RF-304. El numero aparece recien en la segunda copia: «Karioka (copia 2)». */
+    nombreCopia: (nombre: string, numero: number) =>
+      numero === 1 ? `${nombre} (copia)` : `${nombre} (copia ${numero})`,
+    // RF-305 + RNF-6
+    confirmarBorrarTitulo: '¿Borrar la plantilla?',
+    confirmarBorrarTexto: (nombre: string) =>
+      `Se borra «${nombre}». Las partidas que ya jugaste con ella no cambian.`,
   },
 
   plantilla: {

@@ -731,10 +731,19 @@ si más adelante entra color, entra por los tokens y en un solo lugar.
 
 # Fase 5 — Plantillas y reglas
 
-- [ ] **5.1 — Lista de plantillas** (RF-303, RF-304, RF-305)
+- [x] **5.1 — Lista de plantillas** (RF-303, RF-304, RF-305)
 
   `app/plantillas/index.tsx`. Las predefinidas se muestran con un candado: se duplican,
   no se editan ni se borran. Borrar una propia pide confirmación (RNF-6).
+
+  **Cómo quedó** (ver registro, cambios 51 y 52): card punteada «+ Nueva plantilla» arriba
+  y una card por plantilla con ícono, nombre y resumen (`2 reglas · 7 rondas`). Las
+  predefinidas llevan el sello «Predefinida» en lugar del candado y solo ofrecen Duplicar;
+  las propias se tocan para editarlas y ofrecen Duplicar y Borrar, con confirmación. Se
+  entra desde el ícono del pie del Home. Header nativo, con el título y el botón de volver.
+
+  **Checkpoint:** verificado en el teléfono: duplicar Karioka dos veces da «Karioka (copia)»
+  y «Karioka (copia 2)», borrar pide confirmación, y la copia sobrevive al reinicio.
 
 - [ ] **5.2 — Editor de plantilla: datos generales** (RF-302)
 
@@ -1039,3 +1048,11 @@ Durante el paso 4.3 (participantes):
 |---|---|---|
 | 49 | El paso entrega un componente, `PopupParticipante`, y ninguna pantalla lo monta todavía: lo abren el sheet de armado (6.1) y la configuración (9.1). Su checkpoint se verifica en el 6.1. Texto nuevo: `participante.editarTitulo`. | El popup del mockup vive sobre el sheet de «Nueva partida», que todavía no existe, y el plan prohíbe inventar pantallas que el mockup no tiene. Decisión de la usuaria, como en los cambios 33 y 48: antes diferir la verificación que agregar un host de prueba. El formulario y la validación (RF-202) ya estaban del 4.1. |
 | 50 | Archivar un participante (RF-204) se implementa en el 9.1, no acá. El popup solo da de alta y edita. | El plan ya pone «administración de participantes» en Configuración (9.1), y el mockup no muestra un botón de eliminar dentro del popup. `participantes.archivar` está desde el 2.3 y el 9.2 revisa que pida confirmación. |
+
+Durante el paso 5.1 (lista de plantillas):
+
+| # | Cambio | Motivo |
+|---|---|---|
+| 51 | El ícono del pie del Home dice «Plantillas» y no «Agregar plantilla», y abre la lista. | El mockup no tiene pantalla de lista: ahí el ícono va directo a «Nueva plantilla». Pero duplicar (RF-304) y borrar (RF-305) no tienen otra puerta de entrada, y el plan pide la lista. Desde la lista se agrega con la card punteada, así que el «agregar» del mockup no se pierde. |
+| 52 | Las predefinidas se marcan con un `Chip` que dice «Predefinida», no con un candado. La lista usa el header nativo del stack en lugar del encabezado dibujado del mockup. | Los glifos de candado disponibles se dibujan como emoji de color en el teléfono y romperían el monocromo (misma razón que el cambio 36). La pantalla no está en el mockup, así que no hay encabezado propio que copiar, y el header nativo trae el botón de volver. |
+| 53 | Duplicar numera desde la segunda copia: «Karioka (copia)», «Karioka (copia 2)». | `plantilla.nombre` no es único en la base, y dos plantillas con el mismo nombre no se distinguen en la grilla del armado (6.1). |

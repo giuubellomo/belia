@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { sembrar } from '@/db/seed';
+import { es } from '@/i18n/es';
 import { useDueno } from '@/hooks/useDueno';
 
 /**
@@ -48,6 +49,10 @@ function Navegacion() {
       </Stack.Protected>
       <Stack.Protected guard={hayDueno}>
         <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="plantillas/index"
+          options={{ title: es.plantillas.titulo, headerBackTitle: es.comun.volver }}
+        />
       </Stack.Protected>
     </Stack>
   );
