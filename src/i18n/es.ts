@@ -110,13 +110,28 @@ export const es = {
 
   plantilla: {
     nueva: 'Nueva plantilla',
+    editar: 'Editar plantilla',
     nombreEIcono: 'Nombre e ícono',
+    nombreEjemplo: 'Ej: Karioka',
+    /** Lector de pantalla, en el selector de icono. `clave` es la del ícono: «cartas». */
+    icono: (clave: string) => `Ícono ${clave}`,
     puntosDeCadaRonda: 'Los puntos de cada ronda',
     seSuman: 'Se suman',
     seRestan: 'Se restan',
     gana: 'Gana',
     menosPuntos: 'Menos puntos',
     masPuntos: 'Más puntos',
+    /**
+     * Lo que queda configurado, en una linea. Las uniones son las del dominio
+     * (`ModoPuntos`, `CriterioVictoria`); este archivo no importa nada.
+     */
+    ayudaPuntos: (modo: 'suma' | 'resta', criterio: 'menor' | 'mayor') =>
+      `Los puntos de cada ronda ${modo === 'suma' ? 'se suman al' : 'se restan del'} total y gana ` +
+      `quien termina con ${criterio === 'menor' ? 'menos' : 'más'}. Cada regla puede sumar o restar por separado.`,
+    // Al volver con cambios sin guardar (el editor guarda recien al tocar GUARDAR)
+    salirTitulo: '¿Salir sin guardar?',
+    salirTexto: 'Los cambios que hiciste se pierden.',
+    salir: 'Salir',
     reglas: (n: number) => `Reglas · ${n}`,
     agregarRegla: 'Agregar regla',
     rondas: (n: number) => `Rondas · ${n}`,

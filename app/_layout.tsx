@@ -53,6 +53,9 @@ function Navegacion() {
           name="plantillas/index"
           options={{ title: es.plantillas.titulo, headerBackTitle: es.comun.volver }}
         />
+        {/* El editor dibuja su propio encabezado (mockup 3) y confirma antes de salir
+            con cambios sin guardar: sin gesto de arrastrar, la ‹ es la unica salida. */}
+        <Stack.Screen name="plantillas/[id]" options={{ headerShown: false, gestureEnabled: false }} />
       </Stack.Protected>
     </Stack>
   );

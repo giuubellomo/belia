@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -5,6 +6,7 @@ import { Boton } from '@/components/Boton';
 import { Card } from '@/components/Card';
 import { Chip } from '@/components/Chip';
 import { Popup } from '@/components/Popup';
+import { ID_NUEVA } from '@/hooks/useBorradorDePlantilla';
 import { usePlantillas } from '@/hooks/usePlantillas';
 import { es } from '@/i18n/es';
 import * as plantillas from '@/repositories/plantillas';
@@ -20,12 +22,12 @@ import { AREA_TOCABLE_MINIMA, colores, espacios, tipografia } from '@/theme/toke
  * editarlas, y borrarlas pide confirmacion (RNF-6).
  */
 export default function ListaDePlantillas() {
+  const router = useRouter();
   const { plantillas: lista, cargando, mutar } = usePlantillas();
   const [aBorrar, setABorrar] = useState<PlantillaGuardada | null>(null);
   const [errorAlBorrar, setErrorAlBorrar] = useState(false);
 
-  /** Paso 5.2: el editor todavia no existe. */
-  const abrirEditor = (_id: string) => {};
+  const abrirEditor = (id: string) => router.push(`/plantillas/${id}`);
 
   const duplicar = async (plantilla: PlantillaGuardada) => {
     const nombres = lista.map((otra) => otra.nombre);
@@ -46,7 +48,7 @@ export default function ListaDePlantillas() {
   return (
     <View style={styles.pantalla}>
       <ScrollView contentContainerStyle={styles.contenido}>
-        <Card estado="punteada" onPress={() => abrirEditor('nueva')} etiqueta={es.plantilla.nueva}>
+        <Card estado="punteada" onPress={() => abrirEditor(ID_NUEVA)} etiqueta={es.plantilla.nueva}>
           <Text style={styles.nueva}>{`${iconos.mas}  ${es.plantilla.nueva}`}</Text>
         </Card>
 

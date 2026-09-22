@@ -745,9 +745,17 @@ si más adelante entra color, entra por los tokens y en un solo lugar.
   **Checkpoint:** verificado en el teléfono: duplicar Karioka dos veces da «Karioka (copia)»
   y «Karioka (copia 2)», borrar pide confirmación, y la copia sobrevive al reinicio.
 
-- [ ] **5.2 — Editor de plantilla: datos generales** (RF-302)
+- [x] **5.2 — Editor de plantilla: datos generales** (RF-302)
 
   `app/plantillas/[id].tsx`, primera parte: nombre, ícono, `modo_puntos`, `criterio_victoria`.
+
+  **Cómo quedó** (ver registro, cambios 54 a 56): encabezado propio con ‹ y título, nombre e
+  ícono, los dos segmentados y la línea de ayuda que se reescribe según lo elegido, con
+  GUARDAR PLANTILLA al pie. El borrador vive en `useBorradorDePlantilla`, que los pasos 5.3
+  y 5.4 van a reusar. El id `nueva` en la ruta es la plantilla en blanco.
+
+  **Checkpoint:** verificado en el teléfono: se crea una plantilla desde cero, se edita una
+  propia, y volver con cambios sin guardar pregunta antes de descartarlos.
 
 - [ ] **5.3 — Reglas** (RF-401 a RF-406)
 
@@ -1056,3 +1064,11 @@ Durante el paso 5.1 (lista de plantillas):
 | 51 | El ícono del pie del Home dice «Plantillas» y no «Agregar plantilla», y abre la lista. | El mockup no tiene pantalla de lista: ahí el ícono va directo a «Nueva plantilla». Pero duplicar (RF-304) y borrar (RF-305) no tienen otra puerta de entrada, y el plan pide la lista. Desde la lista se agrega con la card punteada, así que el «agregar» del mockup no se pierde. |
 | 52 | Las predefinidas se marcan con un `Chip` que dice «Predefinida», no con un candado. La lista usa el header nativo del stack en lugar del encabezado dibujado del mockup. | Los glifos de candado disponibles se dibujan como emoji de color en el teléfono y romperían el monocromo (misma razón que el cambio 36). La pantalla no está en el mockup, así que no hay encabezado propio que copiar, y el header nativo trae el botón de volver. |
 | 53 | Duplicar numera desde la segunda copia: «Karioka (copia)», «Karioka (copia 2)». | `plantilla.nombre` no es único en la base, y dos plantillas con el mismo nombre no se distinguen en la grilla del armado (6.1). |
+
+Durante el paso 5.2 (editor: datos generales):
+
+| # | Cambio | Motivo |
+|---|---|---|
+| 54 | **El editor de plantillas no guarda en el momento**: arma un borrador en memoria y escribe la plantilla entera al tocar GUARDAR PLANTILLA. Volver con cambios sin guardar pide confirmación; el gesto de arrastrar está apagado y el botón atrás de Android pasa por la misma confirmación. | Choca con la convención «guardar en el momento» (RNF-2), así que lo decidió la usuaria. Es lo que dibuja el mockup y para lo que se escribió el repositorio (`actualizar` reemplaza reglas y rondas enteras). La alternativa creaba una plantilla vacía apenas se entraba a «Nueva plantilla» y no dejaba arrepentirse de un cambio. La confirmación cubre lo que RNF-2 protege: que no se pierda nada en silencio. |
+| 55 | El borrador es un hook, `useBorradorDePlantilla`: expone `borrador`, `sucio`, `cambiar` y `guardar`, y no se pisa cuando `mutar` recarga las plantillas. `ID_NUEVA` (`'nueva'`) es el id de ruta de una plantilla en blanco; no hay `app/plantillas/nueva.tsx`. | La pantalla pasaba las 150 líneas de la convención, y los pasos 5.3 y 5.4 editan el mismo borrador. El plan fija `app/plantillas/[id].tsx` como única ruta del editor. |
+| 56 | Al guardar, `rondasIlimitadas` se deriva: sin rondas definidas, la plantilla es de rondas libres. El nombre se corta en 30 caracteres. | Es la invariante que ya cumplen las predefinidas (Karioka 7 rondas, Simple ninguna) y evita una plantilla de cero rondas fijas, que no se puede jugar. El largo del nombre no estaba fijado y tiene que entrar en la card de la grilla del armado (6.1). |
