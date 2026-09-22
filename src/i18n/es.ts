@@ -70,6 +70,8 @@ export const es = {
 
   participante: {
     agregarTitulo: 'Agregar participante',
+    /** El mismo popup, con los datos cargados: alta en el 6.1, edicion en el 9.1. */
+    editarTitulo: 'Editar participante',
     nombre: 'Nombre',
     nombreEjemplo: 'Ej: Sol',
     iconoOColor: 'Ícono o color',

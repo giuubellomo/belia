@@ -714,12 +714,18 @@ si más adelante entra color, entra por los tokens y en un solo lugar.
   Verificada en el teléfono la variante **sin partida**; la de partida en curso queda para
   el paso 6.2 (cambio 48).
 
-- [ ] **4.3 — Crear y editar participantes** (RF-201 a RF-204)
+- [x] **4.3 — Crear y editar participantes** (RF-201 a RF-204)
 
   Popup de alta con nombre y selector de color o ícono. Validación: obligatorio,
   máximo 20 caracteres, sin repetir entre activos.
 
+  **Cómo quedó** (ver registro, cambios 49 y 50): `src/components/PopupParticipante.tsx`,
+  el popup del mockup sobre el `FormularioParticipante` del 4.1. Sin `participante` da de
+  alta; con uno, edita (RF-203). Escribe por `mutar`, avisa al que lo montó con qué se
+  guardó, y cada apertura monta un formulario limpio.
+
   **Checkpoint:** se crea un participante, se cierra y se reabre la app, y sigue ahí.
+  Diferido al paso 6.1, que es donde el popup se abre (cambio 49).
 
 ---
 
@@ -1026,3 +1032,10 @@ Durante el paso 4.2 (Home):
 | 46 | Las cuatro acciones del Home quedan tocables pero sin destino: «Continuar partida» (paso 7.1), el armado de «Nuevo juego» (6.1), Configuración (9.1) y Agregar plantilla (5.1). | El plan ya lo permitía para los dos íconos del pie; las otras dos pantallas tampoco existen todavía y navegar a una ruta inexistente rompe el router. Cada una está marcada con el paso que la cablea. |
 | 47 | Ícono nuevo `plantillaNueva` (`⊞`) y el Home sin header (`headerShown: false` en `_layout.tsx`). El popup de A-5 reusa `es.finalizar.confirmarTitulo` como título, con `es.home.terminarAnterior(nombre)` como texto. | El mockup muestra un ícono de grilla con un `+` para «Agregar plantilla» y ninguna barra de título. El texto de confirmación estaba marcado como propuesta en el cambio 41: se confirma acá. |
 | 48 | La mitad del checkpoint que pide una partida en curso se verifica en el paso 6.2. | Ninguna pantalla crea partidas hasta ese paso. Misma decisión de la usuaria que el cambio 33: no meter datos falsos en la base para adelantar una verificación. El cálculo de la ronda queda cubierto por los tests del cambio 45. |
+
+Durante el paso 4.3 (participantes):
+
+| # | Cambio | Motivo |
+|---|---|---|
+| 49 | El paso entrega un componente, `PopupParticipante`, y ninguna pantalla lo monta todavía: lo abren el sheet de armado (6.1) y la configuración (9.1). Su checkpoint se verifica en el 6.1. Texto nuevo: `participante.editarTitulo`. | El popup del mockup vive sobre el sheet de «Nueva partida», que todavía no existe, y el plan prohíbe inventar pantallas que el mockup no tiene. Decisión de la usuaria, como en los cambios 33 y 48: antes diferir la verificación que agregar un host de prueba. El formulario y la validación (RF-202) ya estaban del 4.1. |
+| 50 | Archivar un participante (RF-204) se implementa en el 9.1, no acá. El popup solo da de alta y edita. | El plan ya pone «administración de participantes» en Configuración (9.1), y el mockup no muestra un botón de eliminar dentro del popup. `participantes.archivar` está desde el 2.3 y el 9.2 revisa que pida confirmación. |
