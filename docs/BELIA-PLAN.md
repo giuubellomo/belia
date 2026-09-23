@@ -757,7 +757,7 @@ si más adelante entra color, entra por los tokens y en un solo lugar.
   **Checkpoint:** verificado en el teléfono: se crea una plantilla desde cero, se edita una
   propia, y volver con cambios sin guardar pregunta antes de descartarlos.
 
-- [ ] **5.3 — Reglas** (RF-401 a RF-406)
+- [x] **5.3 — Reglas** (RF-401 a RF-406)
 
   Lista de reglas de la plantilla con su puntaje y su alcance, más el sheet de alta y
   edición: título, descripción opcional, suma o resta, valor, y alcance con las dos
@@ -765,7 +765,13 @@ si más adelante entra color, entra por los tokens y en un solo lugar.
 
   Validación: título obligatorio, puntaje distinto de cero (RF-404).
 
+  **Cómo quedó** (ver registro, cambios 57 a 59): `ListaDeReglas` (la sección «REGLAS · n»
+  con el chip de alcance, la pastilla del puntaje y las flechas de orden) y `SheetDeRegla`
+  (el sheet del mockup, más la fila «¿Quién la recibe?» y un «Eliminar» al pie). Las tres
+  operaciones sobre reglas viven en `useBorradorDePlantilla`.
+
   **Checkpoint:** se agrega una regla a una plantilla duplicada, se reabre la app y quedó.
+  Verificado en el teléfono.
 
 - [ ] **5.4 — Rondas y ajuste por ronda** (RF-501 a RF-505)
 
@@ -1072,3 +1078,11 @@ Durante el paso 5.2 (editor: datos generales):
 | 54 | **El editor de plantillas no guarda en el momento**: arma un borrador en memoria y escribe la plantilla entera al tocar GUARDAR PLANTILLA. Volver con cambios sin guardar pide confirmación; el gesto de arrastrar está apagado y el botón atrás de Android pasa por la misma confirmación. | Choca con la convención «guardar en el momento» (RNF-2), así que lo decidió la usuaria. Es lo que dibuja el mockup y para lo que se escribió el repositorio (`actualizar` reemplaza reglas y rondas enteras). La alternativa creaba una plantilla vacía apenas se entraba a «Nueva plantilla» y no dejaba arrepentirse de un cambio. La confirmación cubre lo que RNF-2 protege: que no se pierda nada en silencio. |
 | 55 | El borrador es un hook, `useBorradorDePlantilla`: expone `borrador`, `sucio`, `cambiar` y `guardar`, y no se pisa cuando `mutar` recarga las plantillas. `ID_NUEVA` (`'nueva'`) es el id de ruta de una plantilla en blanco; no hay `app/plantillas/nueva.tsx`. | La pantalla pasaba las 150 líneas de la convención, y los pasos 5.3 y 5.4 editan el mismo borrador. El plan fija `app/plantillas/[id].tsx` como única ruta del editor. |
 | 56 | Al guardar, `rondasIlimitadas` se deriva: sin rondas definidas, la plantilla es de rondas libres. El nombre se corta en 30 caracteres. | Es la invariante que ya cumplen las predefinidas (Karioka 7 rondas, Simple ninguna) y evita una plantilla de cero rondas fijas, que no se puede jugar. El largo del nombre no estaba fijado y tiene que entrar en la card de la grilla del armado (6.1). |
+
+Durante el paso 5.3 (reglas):
+
+| # | Cambio | Motivo |
+|---|---|---|
+| 57 | El sheet de la regla lleva una fila que el mockup no tiene: **«¿Quién la recibe?»**, con «Una sola persona» (por defecto) o «Varias». Es `asignacionUnica` (RF-406). | Alguien tiene que decidir ese campo y el mockup no lo muestra. Decisión de la usuaria entre esto, derivarlo del alcance o fijarlo siempre en «una sola persona»: derivarlo dejaba mal al «7 de oro», que es opcional y lo tiene una sola persona. En la lista solo se anuncia la excepción («Varias»). |
+| 58 | Las reglas se reordenan con flechas ↑ ↓ en cada fila, no arrastrando el ≡ del mockup. | Arrastrar necesita `react-native-gesture-handler`, que no está en el Stack (misma razón que el cambio 40). Decisión de la usuaria; las flechas además funcionan con el lector de pantalla. |
+| 59 | El puntaje se mueve de a 5, entre 5 y 500, y se edita como magnitud + signo. Borrar una regla limpia los ajustes por ronda que la apuntaban. El «Eliminar» va al pie del contenido del sheet, no en el encabezado. | Con mínimo 5 el puntaje nunca puede ser cero (RF-404) sin un mensaje de error. Un ajuste huérfano rompe la clave foránea al guardar la plantilla. En el encabezado, «Eliminar» ocupaba el lugar de la ✕, que es la salida del sheet en el mockup. |

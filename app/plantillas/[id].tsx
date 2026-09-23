@@ -16,9 +16,11 @@ import { Boton } from '@/components/Boton';
 import { BotonIcono } from '@/components/BotonIcono';
 import { CampoTexto } from '@/components/CampoTexto';
 import { Etiqueta } from '@/components/Etiqueta';
+import { ListaDeReglas } from '@/components/ListaDeReglas';
 import { Popup } from '@/components/Popup';
 import { Segmented } from '@/components/Segmented';
-import type { CriterioVictoria, ModoPuntos } from '@/domain/types';
+import { SheetDeRegla } from '@/components/SheetDeRegla';
+import type { CriterioVictoria, ModoPuntos, Regla } from '@/domain/types';
 import { useBorradorDePlantilla } from '@/hooks/useBorradorDePlantilla';
 import { es } from '@/i18n/es';
 import { ICONOS_PLANTILLA, iconoDePlantilla, iconos } from '@/theme/iconos';
@@ -39,11 +41,22 @@ const LARGO_MAXIMO_NOMBRE = 30;
 export default function EditorDePlantilla() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { borrador, esNueva, sucio, cargando, cambiar: cambiarBorrador, guardar: escribir } =
-    useBorradorDePlantilla(id);
+  const {
+    borrador,
+    esNueva,
+    sucio,
+    cargando,
+    cambiar: cambiarBorrador,
+    guardarRegla,
+    borrarRegla,
+    moverRegla,
+    guardar: escribir,
+  } = useBorradorDePlantilla(id);
 
   const [confirmandoSalida, setConfirmandoSalida] = useState(false);
   const [errorAlGuardar, setErrorAlGuardar] = useState(false);
+  // null = sheet cerrado. Con una regla se edita esa; con 'nueva', se da de alta.
+  const [reglaEnEdicion, setReglaEnEdicion] = useState<Regla | 'nueva' | null>(null);
 
   const volver = () => {
     if (sucio) {
@@ -137,6 +150,13 @@ export default function EditorDePlantilla() {
               {es.plantilla.ayudaPuntos(borrador.modoPuntos, borrador.criterioVictoria)}
             </Text>
           </View>
+
+          <ListaDeReglas
+            reglas={borrador.reglas}
+            onEditar={setReglaEnEdicion}
+            onAgregar={() => setReglaEnEdicion('nueva')}
+            onMover={moverRegla}
+          />
         </ScrollView>
 
         <View style={styles.pie}>
@@ -148,6 +168,24 @@ export default function EditorDePlantilla() {
           />
         </View>
       </KeyboardAvoidingView>
+
+      <SheetDeRegla
+        visible={reglaEnEdicion !== null}
+        onCerrar={() => setReglaEnEdicion(null)}
+        regla={reglaEnEdicion === 'nueva' || reglaEnEdicion === null ? undefined : reglaEnEdicion}
+        onGuardar={(datos) => {
+          setErrorAlGuardar(false);
+          guardarRegla(datos);
+        }}
+        onBorrar={
+          reglaEnEdicion === 'nueva' || reglaEnEdicion === null
+            ? undefined
+            : () => {
+                borrarRegla(reglaEnEdicion.id);
+                setReglaEnEdicion(null);
+              }
+        }
+      />
 
       <Popup
         visible={confirmandoSalida}

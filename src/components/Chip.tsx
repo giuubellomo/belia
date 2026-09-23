@@ -3,7 +3,8 @@ import { StyleSheet, Text, View } from 'react-native';
 import { colores, espacios, numerales, tipografia } from '@/theme/tokens';
 
 interface Props {
-  texto: string;
+  /** Sin texto queda solo el valor: la pastilla de puntaje de una regla (5.3). */
+  texto?: string;
   /** El puntaje, en negrita a la derecha del texto. */
   valor?: string;
   /** ● regla de todas las rondas, ○ regla opcional. */
@@ -16,7 +17,7 @@ export function Chip({ texto, valor, punto, variante = 'relleno' }: Props) {
   return (
     <View style={[styles.base, variante === 'relleno' ? styles.relleno : styles.borde]}>
       {punto !== undefined && <View style={[styles.punto, punto === 'vacio' && styles.puntoVacio]} />}
-      <Text style={styles.texto}>{texto}</Text>
+      {texto !== undefined && <Text style={styles.texto}>{texto}</Text>}
       {valor !== undefined && <Text style={[styles.valor, numerales]}>{valor}</Text>}
     </View>
   );

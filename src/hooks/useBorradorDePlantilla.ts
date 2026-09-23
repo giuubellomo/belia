@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 
+import type { Regla } from '@/domain/types';
+import { nuevoId } from '@/repositories/comun';
 import * as plantillas from '@/repositories/plantillas';
 import type { DatosPlantilla, PlantillaGuardada } from '@/repositories/plantillas';
 
@@ -19,6 +21,9 @@ export const BORRADOR_NUEVO: DatosPlantilla = {
   rondas: [],
 };
 
+/** Una regla sin lo que pone el borrador: el id (si es nueva) y el orden. */
+export type DatosRegla = Omit<Regla, 'id' | 'orden'> & { id?: string };
+
 export interface BorradorDePlantilla {
   /** null mientras se lee la plantilla, o si el id no existe. */
   borrador: DatosPlantilla | null;
@@ -27,6 +32,12 @@ export interface BorradorDePlantilla {
   sucio: boolean;
   cargando: boolean;
   cambiar: (cambio: Partial<DatosPlantilla>) => void;
+  /** Agrega la regla al final, o reemplaza la que tenga ese id (paso 5.3). */
+  guardarRegla: (regla: DatosRegla) => void;
+  /** Saca la regla y los ajustes por ronda que la apuntaban. */
+  borrarRegla: (id: string) => void;
+  /** Mueve la regla un lugar: -1 sube, 1 baja. En la punta no hace nada. */
+  moverRegla: (id: string, direccion: -1 | 1) => void;
   /** Escribe la plantilla entera. Si falla, deja pasar el error. */
   guardar: () => Promise<void>;
 }
@@ -61,6 +72,43 @@ export function useBorradorDePlantilla(id: string): BorradorDePlantilla {
     sucio: borrador !== null && JSON.stringify(borrador) !== JSON.stringify(original),
     cargando,
     cambiar: (cambio) => setBorrador((previo) => (previo === null ? previo : { ...previo, ...cambio })),
+
+    guardarRegla: (regla) =>
+      setBorrador((previo) => {
+        if (previo === null) return previo;
+        const existe = regla.id !== undefined && previo.reglas.some((otra) => otra.id === regla.id);
+        const reglas = existe
+          ? previo.reglas.map((otra) => (otra.id === regla.id ? { ...otra, ...regla, id: otra.id } : otra))
+          : [...previo.reglas, { ...regla, id: regla.id ?? nuevoId(), orden: previo.reglas.length }];
+        return { ...previo, reglas: conOrden(reglas) };
+      }),
+
+    borrarRegla: (id) =>
+      setBorrador((previo) => {
+        if (previo === null) return previo;
+        return {
+          ...previo,
+          reglas: conOrden(previo.reglas.filter((regla) => regla.id !== id)),
+          // Sin esto quedarian ajustes apuntando a una regla que ya no existe, y
+          // guardar la plantilla romperia la clave foranea de la base.
+          rondas: previo.rondas.map((ronda) => {
+            const { [id]: _borrado, ...ajustes } = ronda.ajustes;
+            return { ...ronda, ajustes };
+          }),
+        };
+      }),
+
+    moverRegla: (id, direccion) =>
+      setBorrador((previo) => {
+        if (previo === null) return previo;
+        const desde = previo.reglas.findIndex((regla) => regla.id === id);
+        const hasta = desde + direccion;
+        if (desde === -1 || hasta < 0 || hasta >= previo.reglas.length) return previo;
+        const reglas = [...previo.reglas];
+        const [movida] = reglas.splice(desde, 1);
+        reglas.splice(hasta, 0, movida!);
+        return { ...previo, reglas: conOrden(reglas) };
+      }),
     guardar: async () => {
       if (borrador === null) return;
       const datos: DatosPlantilla = {
@@ -73,6 +121,11 @@ export function useBorradorDePlantilla(id: string): BorradorDePlantilla {
       await mutar(() => (esNueva ? plantillas.crear(datos) : plantillas.actualizar({ id, ...datos })));
     },
   };
+}
+
+/** `orden` es la posicion en la lista: se recalcula cada vez que la lista cambia. */
+function conOrden(reglas: Regla[]): Regla[] {
+  return reglas.map((regla, i) => (regla.orden === i ? regla : { ...regla, orden: i }));
 }
 
 /** Los datos editables, sin el id ni `esPredefinida`, que el editor no toca. */

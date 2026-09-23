@@ -153,6 +153,15 @@ export const es = {
     enTodasLasRondasAyuda: 'Se pide cargarla en cada ronda',
     opcional: 'Opcional',
     opcionalAyuda: 'Se marca solo si pasó en esa ronda',
+    // RF-406. No está en el mockup: decisión de la usuaria (ver registro, cambio 57).
+    quienLaRecibe: '¿Quién la recibe?',
+    unaPersona: 'Una sola persona',
+    varias: 'Varias',
+    quienLaRecibeAyuda:
+      'Con «una sola persona», marcársela a alguien se la saca a quien la tenía en esa ronda.',
+    // Lector de pantalla, en las flechas que ordenan la lista
+    subir: 'Subir',
+    bajar: 'Bajar',
     ajustado: 'ajustado',
     guardar: 'GUARDAR REGLA',
     // RF-404
