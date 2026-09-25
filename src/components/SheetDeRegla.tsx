@@ -32,6 +32,11 @@ interface Props {
   onGuardar: (datos: DatosRegla) => void;
   /** Solo al editar: saca la regla del borrador. */
   onBorrar?: () => void;
+  /**
+   * Es una regla de una sola ronda (paso 5.4): «En todas las rondas» no tiene
+   * sentido, así que la opción se llama «Obligatoria».
+   */
+  deUnaRonda?: boolean;
 }
 
 /**
@@ -42,7 +47,7 @@ interface Props {
  * (cambio 54). El puntaje se edita como magnitud + signo y se guarda con signo,
  * que es como lo pide A-2.
  */
-export function SheetDeRegla({ visible, onCerrar, regla, onGuardar, onBorrar }: Props) {
+export function SheetDeRegla({ visible, onCerrar, regla, onGuardar, onBorrar, deUnaRonda = false }: Props) {
   const [titulo, setTitulo] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [signo, setSigno] = useState<Signo>('suma');
@@ -136,8 +141,8 @@ export function SheetDeRegla({ visible, onCerrar, regla, onGuardar, onBorrar }: 
       <View style={styles.seccion}>
         <Etiqueta texto={es.regla.cuandoSeAplica} />
         <Opcion
-          titulo={es.regla.enTodasLasRondas}
-          ayuda={es.regla.enTodasLasRondasAyuda}
+          titulo={deUnaRonda ? es.regla.obligatoria : es.regla.enTodasLasRondas}
+          ayuda={deUnaRonda ? es.regla.obligatoriaAyuda : es.regla.enTodasLasRondasAyuda}
           elegida={alcance === 'todas'}
           onPress={() => setAlcance('todas')}
         />

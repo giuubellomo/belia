@@ -51,6 +51,7 @@ interface FilaRegla {
   alcance: AlcanceRegla;
   asignacion_unica: number;
   orden: number;
+  solo_en_ronda: number | null;
 }
 
 interface FilaRonda {
@@ -199,7 +200,7 @@ async function plantillasDesdeBase(
     filtro,
   );
   const reglas = await db.getAllAsync<FilaRegla>(
-    `SELECT id, plantilla_id, titulo, descripcion, puntaje_base, alcance, asignacion_unica, orden
+    `SELECT id, plantilla_id, titulo, descripcion, puntaje_base, alcance, asignacion_unica, orden, solo_en_ronda
      FROM regla_plantilla WHERE (? IS NULL OR plantilla_id = ?)
      ORDER BY orden, id`,
     filtro,
@@ -247,6 +248,7 @@ function aRegla(fila: FilaRegla): Regla {
     orden: fila.orden,
   };
   if (fila.descripcion !== null) regla.descripcion = fila.descripcion;
+  if (fila.solo_en_ronda !== null) regla.soloEnRonda = fila.solo_en_ronda;
   return regla;
 }
 
@@ -294,12 +296,17 @@ async function insertarContenido(
   datos: Pick<Plantilla, 'reglas' | 'rondas'>,
 ): Promise<void> {
   const reglasPropias = new Set(datos.reglas.map((regla) => regla.id));
+  const numeros = new Set(datos.rondas.map((ronda) => ronda.numero));
 
   for (const regla of datos.reglas) {
+    // La base guarda el numero sin foreign key: que la ronda exista se mira aca.
+    if (regla.soloEnRonda !== undefined && !numeros.has(regla.soloEnRonda)) {
+      throw new Error(`La regla ${regla.id} es solo de la ronda ${regla.soloEnRonda}, que no existe`);
+    }
     await db.runAsync(
       `INSERT INTO regla_plantilla
-         (id, plantilla_id, titulo, descripcion, puntaje_base, alcance, asignacion_unica, orden)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+         (id, plantilla_id, titulo, descripcion, puntaje_base, alcance, asignacion_unica, orden, solo_en_ronda)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         regla.id,
         plantillaId,
@@ -309,6 +316,7 @@ async function insertarContenido(
         regla.alcance,
         regla.asignacionUnica ? 1 : 0,
         regla.orden,
+        regla.soloEnRonda ?? null,
       ],
     );
   }

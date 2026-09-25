@@ -35,9 +35,9 @@ está escrito para que un agente (Claude Code) lo siga paso a paso, de arriba ha
 
 | | | Versión instalada |
 |---|---|---|
-| Framework | Expo (managed) + React Native | `expo ~57.0.24`, `react-native 0.86.3`, `react 19.2.3` |
+| Framework | Expo (managed) + React Native | `expo ~57.0.25`, `react-native 0.86.3`, `react 19.2.3` |
 | Lenguaje | TypeScript, `strict: true` | `typescript ~6.0.3` |
-| Navegación | expo-router (file-based) | `expo-router ~57.0.22` |
+| Navegación | expo-router (file-based) | `expo-router ~57.0.23` |
 | Persistencia | expo-sqlite | `expo-sqlite ~57.0.3` |
 | Tests | jest + ts-jest sobre el dominio puro | `jest ~29.7.0`, `ts-jest ^29.4.12` |
 | Pantalla activa | expo-keep-awake | `expo-keep-awake ~57.0.2` |
@@ -53,7 +53,7 @@ No las saques: cada una está acá por una razón concreta.
 |---|---|---|
 | `react-native-safe-area-context` | `~5.7.0` | Requisito de expo-router. |
 | `react-native-screens` | `~4.26.0` | Requisito de expo-router. |
-| `expo-linking` | `~57.0.10` | Requisito de la guía de instalación de expo-router. |
+| `expo-linking` | `~57.0.11` | Requisito de la guía de instalación de expo-router. |
 | `expo-constants` | `~57.0.19` | Requisito de la guía de instalación de expo-router. |
 | `react-dom` | `19.2.3` | **Pineada a mano.** expo-router arrastra `react-dom@19.3.0`, que exige `react@^19.3.0`, pero el SDK 57 pinea `react@19.2.3`. Sin pinearla, todo `npm install` posterior falla con `ERESOLVE`. |
 
@@ -258,6 +258,7 @@ pegar botones.
     alcance: AlcanceRegla;
     asignacionUnica: boolean;
     orden: number;
+    soloEnRonda?: number;       // paso 5.4: existe solo en esa ronda (registro, cambio 60)
   }
 
   export interface RondaDefinida {
@@ -498,6 +499,10 @@ pegar botones.
     PRIMARY KEY (ronda_partida_id, regla_id, participante_id)
   );
   ```
+
+  **La migración 2 (paso 5.4) agregó `regla_plantilla.solo_en_ronda`** (`INTEGER`, `NULL` =
+  la regla vale en todas las rondas). Vive en `migrations.ts` y no en `schema.sql`, que es
+  la migración 1 y ya no se edita (ver registro, cambio 60).
 
   `participante_id` en las tablas de partida **no** lleva foreign key: la partida sobrevive
   aunque se borre el participante, porque guarda su snapshot.
@@ -773,7 +778,7 @@ si más adelante entra color, entra por los tokens y en un solo lugar.
   **Checkpoint:** se agrega una regla a una plantilla duplicada, se reabre la app y quedó.
   Verificado en el teléfono.
 
-- [ ] **5.4 — Rondas y ajuste por ronda** (RF-501 a RF-505)
+- [x] **5.4 — Rondas y ajuste por ronda** (RF-501 a RF-505)
 
   Lista de rondas con su objetivo y los chips de las reglas con el puntaje que valen en esa
   ronda. Editar una ronda abre un sheet con el objetivo y un stepper por regla; si el valor
@@ -781,6 +786,16 @@ si más adelante entra color, entra por los tokens y en un solo lugar.
 
   **Checkpoint:** cambiar el puntaje de una regla en la ronda 1 no cambia el de la ronda 2
   ni el base de la plantilla.
+
+  **Cómo quedó** (ver registro, cambios 60 a 63): `ListaDeRondas` (la sección «RONDAS · n»
+  con el número, el objetivo, un chip por regla con lo que vale en esa ronda y las flechas
+  de orden) y `SheetDeRonda` (objetivo, un stepper por regla, las reglas propias de la ronda
+  y «Eliminar» al pie). Las operaciones sobre rondas viven en `useBorradorDePlantilla`.
+  **Hubo un cambio de modelo:** una regla puede existir en una sola ronda (`soloEnRonda`,
+  migración 2), que es la «Regla solo para esta ronda» del mockup.
+
+  Verificado en el teléfono: el checkpoint, una regla solo de la ronda 1, mover y borrar
+  rondas, y que todo sobrevive al reinicio.
 
 ---
 
@@ -1086,3 +1101,12 @@ Durante el paso 5.3 (reglas):
 | 57 | El sheet de la regla lleva una fila que el mockup no tiene: **«¿Quién la recibe?»**, con «Una sola persona» (por defecto) o «Varias». Es `asignacionUnica` (RF-406). | Alguien tiene que decidir ese campo y el mockup no lo muestra. Decisión de la usuaria entre esto, derivarlo del alcance o fijarlo siempre en «una sola persona»: derivarlo dejaba mal al «7 de oro», que es opcional y lo tiene una sola persona. En la lista solo se anuncia la excepción («Varias»). |
 | 58 | Las reglas se reordenan con flechas ↑ ↓ en cada fila, no arrastrando el ≡ del mockup. | Arrastrar necesita `react-native-gesture-handler`, que no está en el Stack (misma razón que el cambio 40). Decisión de la usuaria; las flechas además funcionan con el lector de pantalla. |
 | 59 | El puntaje se mueve de a 5, entre 5 y 500, y se edita como magnitud + signo. Borrar una regla limpia los ajustes por ronda que la apuntaban. El «Eliminar» va al pie del contenido del sheet, no en el encabezado. | Con mínimo 5 el puntaje nunca puede ser cero (RF-404) sin un mensaje de error. Un ajuste huérfano rompe la clave foránea al guardar la plantilla. En el encabezado, «Eliminar» ocupaba el lugar de la ✕, que es la salida del sheet en el mockup. |
+
+Durante el paso 5.4 (rondas y ajuste por ronda):
+
+| # | Cambio | Motivo |
+|---|---|---|
+| 60 | **Cambio de modelo: una regla puede existir en una sola ronda.** `Regla.soloEnRonda?: number` y `regla_plantilla.solo_en_ronda` (migración 2, `NULL` = todas las rondas). Guarda el número de la ronda, sin foreign key: `insertarContenido` valida que la ronda exista. El dominio suma `reglasDeLaRonda`; `reglasSinAsignar`, `marcarRegla` y `puntajeDeReglaEnRonda` la respetan, y el snapshot de la partida la copia. Estas reglas se ven y se editan solo en su ronda, no en «REGLAS · n». | Es la «Regla solo para esta ronda» del mockup, y el modelo no podía expresarla: una regla valía en todas las rondas y el ajuste no puede ser 0. Decisión de la usuaria, con el ejemplo «en la ronda 1 el último en bajar suma 50, en las demás no existe». `schema.sql` no se toca porque es la migración 1. |
+| 61 | Las rondas se reordenan con flechas ↑ ↓, como las reglas (cambio 58). Moverla o borrarla arrastra su objetivo, sus ajustes y sus reglas propias; al borrar, las siguientes bajan un número. | Misma razón que el cambio 58. Decisión de la usuaria. El número de la ronda es su orden (`ronda_plantilla` no tiene `orden`). |
+| 62 | El sheet de la ronda guarda todo recién con GUARDAR RONDA. El ajuste se edita de a 5, entre 5 y 500, con el signo de la regla; si vuelve al base, el ajuste se borra. «Eliminar» va al pie, como en el sheet de regla (cambio 59). Cada regla ajustada dice su base en la fila («ajustado (base −20)»), y la ayuda del pie no nombra un puntaje. En una regla de una sola ronda, «En todas las rondas» se llama «Obligatoria». Sin rondas, la sección explica que se juegan las que quieran. | Los topes de la regla: el ajuste nunca puede ser 0 (`CHECK`). El mockup nombra un solo base en la ayuda y el sheet tiene varias reglas. «En todas las rondas» no tiene sentido en una regla que existe en una sola. |
+| 63 | `expo ~57.0.25`, `expo-linking ~57.0.11`, `expo-router ~57.0.23` (Stack actualizado). | `npx expo install --check` pedía esos parches al cerrar el paso; se corrió `--fix` como indica el Stack. |

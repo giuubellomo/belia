@@ -4,6 +4,7 @@ import {
   numeroRondaEnCurso,
   puedeCerrarRonda,
   puntajeDeReglaEnRonda,
+  reglasDeLaRonda,
   reglasSinAsignar,
   todosCargaron,
 } from '../rondas';
@@ -81,6 +82,33 @@ describe('puntajeDeReglaEnRonda', () => {
   it('rompe si la regla no existe en la plantilla, en vez de devolver 0', () => {
     expect(() => puntajeDeReglaEnRonda(plantilla(), 1, 'fantasma')).toThrow();
   });
+
+  it('una regla solo de una ronda vale su base en esa ronda', () => {
+    const p = plantilla({ reglas: [regla('ultimo', { puntajeBase: 50, soloEnRonda: 1 })] });
+    expect(puntajeDeReglaEnRonda(p, 1, 'ultimo')).toBe(50);
+  });
+
+  it('rompe si se pide una regla en una ronda que no es la suya', () => {
+    const p = plantilla({ reglas: [regla('ultimo', { puntajeBase: 50, soloEnRonda: 1 })] });
+    expect(() => puntajeDeReglaEnRonda(p, 2, 'ultimo')).toThrow();
+  });
+});
+
+// --- reglasDeLaRonda ------------------------------------------------------
+
+describe('reglasDeLaRonda', () => {
+  const p = plantilla({
+    reglas: [regla('bajo'), regla('ultimo', { soloEnRonda: 1 }), regla('escalera', { soloEnRonda: 2 })],
+  });
+
+  it('trae las reglas de todas las rondas mas las que son solo de esa', () => {
+    expect(reglasDeLaRonda(p, 1).map((x) => x.id)).toEqual(['bajo', 'ultimo']);
+    expect(reglasDeLaRonda(p, 2).map((x) => x.id)).toEqual(['bajo', 'escalera']);
+  });
+
+  it('en una ronda sin reglas propias trae solo las de todas', () => {
+    expect(reglasDeLaRonda(p, 3).map((x) => x.id)).toEqual(['bajo']);
+  });
 });
 
 // --- todosCargaron (RF-707) ----------------------------------------------
@@ -124,6 +152,14 @@ describe('reglasSinAsignar', () => {
     const p = plantilla({ reglas: [regla('bonus', { alcance: 'opcional' })] });
     const r = ronda(1, [entrada('a', 25)]);
     expect(reglasSinAsignar(r, p)).toEqual([]);
+  });
+
+  it('pide la regla que es solo de esta ronda, e ignora la de otra ronda', () => {
+    const p = plantilla({
+      reglas: [regla('ultimo', { soloEnRonda: 1 }), regla('escalera', { soloEnRonda: 2 })],
+    });
+    expect(reglasSinAsignar(ronda(1, [entrada('a', 25)]), p).map((x) => x.id)).toEqual(['ultimo']);
+    expect(reglasSinAsignar(ronda(3, [entrada('a', 25)]), p)).toEqual([]);
   });
 });
 
@@ -235,6 +271,11 @@ describe('marcarRegla', () => {
   it('rompe si la regla no existe en la plantilla', () => {
     const r = ronda(1, [entrada('a', 25)]);
     expect(() => marcarRegla(r, plantilla(), 'fantasma', 'a')).toThrow();
+  });
+
+  it('rompe si la regla es solo de otra ronda', () => {
+    const p = plantilla({ reglas: [regla('ultimo', { soloEnRonda: 1 })] });
+    expect(() => marcarRegla(ronda(2, [entrada('a', 25)]), p, 'ultimo', 'a')).toThrow();
   });
 });
 

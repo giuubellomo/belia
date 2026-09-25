@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   BackHandler,
   KeyboardAvoidingView,
@@ -17,10 +17,12 @@ import { BotonIcono } from '@/components/BotonIcono';
 import { CampoTexto } from '@/components/CampoTexto';
 import { Etiqueta } from '@/components/Etiqueta';
 import { ListaDeReglas } from '@/components/ListaDeReglas';
+import { ListaDeRondas } from '@/components/ListaDeRondas';
 import { Popup } from '@/components/Popup';
 import { Segmented } from '@/components/Segmented';
 import { SheetDeRegla } from '@/components/SheetDeRegla';
-import type { CriterioVictoria, ModoPuntos, Regla } from '@/domain/types';
+import { SheetDeRonda } from '@/components/SheetDeRonda';
+import type { CriterioVictoria, ModoPuntos, Regla, RondaDefinida } from '@/domain/types';
 import { useBorradorDePlantilla } from '@/hooks/useBorradorDePlantilla';
 import { es } from '@/i18n/es';
 import { ICONOS_PLANTILLA, iconoDePlantilla, iconos } from '@/theme/iconos';
@@ -30,13 +32,12 @@ import { AREA_TOCABLE_MINIMA, colores, espacios, radios, tipografia } from '@/th
 const LARGO_MAXIMO_NOMBRE = 30;
 
 /**
- * Editor de plantilla, datos generales (paso 5.2, RF-302).
+ * Editor de plantilla: datos generales (paso 5.2, RF-302), reglas (5.3) y
+ * rondas (5.4).
  *
  * El editor trabaja sobre un borrador en memoria y escribe entero al tocar
  * GUARDAR PLANTILLA, como el mockup (ver registro, cambio 54): por eso volver
- * con cambios sin guardar pregunta antes de descartarlos. Las reglas (5.3) y las
- * rondas (5.4) todavia no se editan, pero viajan en el borrador y se guardan
- * intactas.
+ * con cambios sin guardar pregunta antes de descartarlos.
  */
 export default function EditorDePlantilla() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -50,6 +51,9 @@ export default function EditorDePlantilla() {
     guardarRegla,
     borrarRegla,
     moverRegla,
+    guardarRonda,
+    borrarRonda,
+    moverRonda,
     guardar: escribir,
   } = useBorradorDePlantilla(id);
 
@@ -57,6 +61,22 @@ export default function EditorDePlantilla() {
   const [errorAlGuardar, setErrorAlGuardar] = useState(false);
   // null = sheet cerrado. Con una regla se edita esa; con 'nueva', se da de alta.
   const [reglaEnEdicion, setReglaEnEdicion] = useState<Regla | 'nueva' | null>(null);
+  // Igual, para el sheet de una ronda.
+  const [rondaEnEdicion, setRondaEnEdicion] = useState<RondaDefinida | 'nueva' | null>(null);
+
+  // Las de todas las rondas van en «REGLAS»; las de una sola, en su ronda.
+  // Memorizadas porque el sheet de ronda se reinicia si cambian.
+  const reglas = borrador?.reglas;
+  const numeroEnEdicion =
+    rondaEnEdicion === 'nueva' ? (borrador?.rondas.length ?? 0) + 1 : (rondaEnEdicion?.numero ?? null);
+  const generales = useMemo(() => (reglas ?? []).filter((regla) => regla.soloEnRonda === undefined), [reglas]);
+  const propiasEnEdicion = useMemo(
+    () => (reglas ?? []).filter((regla) => regla.soloEnRonda !== undefined && regla.soloEnRonda === numeroEnEdicion),
+    [reglas, numeroEnEdicion],
+  );
+  // Mientras el sheet baja, `rondaEnEdicion` ya es null: el titulo sigue con la ultima.
+  const ultimoNumero = useRef(1);
+  if (numeroEnEdicion !== null) ultimoNumero.current = numeroEnEdicion;
 
   const volver = () => {
     if (sucio) {
@@ -152,10 +172,17 @@ export default function EditorDePlantilla() {
           </View>
 
           <ListaDeReglas
-            reglas={borrador.reglas}
+            reglas={generales}
             onEditar={setReglaEnEdicion}
             onAgregar={() => setReglaEnEdicion('nueva')}
             onMover={moverRegla}
+          />
+
+          <ListaDeRondas
+            plantilla={{ id, ...borrador }}
+            onEditar={setRondaEnEdicion}
+            onAgregar={() => setRondaEnEdicion('nueva')}
+            onMover={moverRonda}
           />
         </ScrollView>
 
@@ -183,6 +210,27 @@ export default function EditorDePlantilla() {
             : () => {
                 borrarRegla(reglaEnEdicion.id);
                 setReglaEnEdicion(null);
+              }
+        }
+      />
+
+      <SheetDeRonda
+        visible={rondaEnEdicion !== null}
+        onCerrar={() => setRondaEnEdicion(null)}
+        numero={numeroEnEdicion ?? ultimoNumero.current}
+        ronda={rondaEnEdicion === 'nueva' || rondaEnEdicion === null ? undefined : rondaEnEdicion}
+        reglasGenerales={generales}
+        reglasPropias={propiasEnEdicion}
+        onGuardar={(datos) => {
+          setErrorAlGuardar(false);
+          guardarRonda(rondaEnEdicion === 'nueva' || rondaEnEdicion === null ? null : rondaEnEdicion.numero, datos);
+        }}
+        onBorrar={
+          rondaEnEdicion === 'nueva' || rondaEnEdicion === null
+            ? undefined
+            : () => {
+                borrarRonda(rondaEnEdicion.numero);
+                setRondaEnEdicion(null);
               }
         }
       />

@@ -137,6 +137,9 @@ export const es = {
     rondas: (n: number) => `Rondas · ${n}`,
     ayudaRondas:
       'Las reglas se aplican en cada ronda. Tocá una ronda para cambiar el objetivo o el puntaje de una regla.',
+    // Sin rondas definidas la plantilla es de rondas libres (registro, cambio 56)
+    ayudaSinRondas: 'Sin rondas definidas se juegan las que quieran, y cada regla vale siempre lo mismo.',
+    agregarRonda: 'Agregar ronda',
     guardar: 'GUARDAR PLANTILLA',
   },
 
@@ -162,7 +165,9 @@ export const es = {
     // Lector de pantalla, en las flechas que ordenan la lista
     subir: 'Subir',
     bajar: 'Bajar',
-    ajustado: 'ajustado',
+    // «¿Cuándo se aplica?» de una regla que es solo de una ronda (paso 5.4)
+    obligatoria: 'Obligatoria',
+    obligatoriaAyuda: 'Hay que marcársela a alguien para cerrar la ronda',
     guardar: 'GUARDAR REGLA',
     // RF-404
     errorTituloVacio: 'Poné un título',
@@ -172,11 +177,19 @@ export const es = {
   ronda: {
     titulo: (n: number) => `Ronda ${n}`,
     objetivo: 'Objetivo de la ronda',
+    objetivoEjemplo: 'Ej: 2 piernas',
+    sinObjetivo: 'Sin objetivo',
     puntajeDeLasReglas: 'Puntaje de las reglas en esta ronda',
     reglaSoloParaEstaRonda: 'Regla solo para esta ronda',
-    /** Ayuda al pie del sheet de edicion de ronda (RF-503). */
-    ayudaAjuste: (n: number, base: number) =>
-      `El puntaje que cambies acá vale solo para la Ronda ${n}. En el resto sigue el de la plantilla (${conSigno(base)}).`,
+    soloEnEstaRonda: 'Solo en esta ronda',
+    /** «ajustado (base −20)»: al lado del alcance, cuando la ronda pisa el puntaje. */
+    ajustado: (base: number) => `ajustado (base ${conSigno(base)})`,
+    /**
+     * Ayuda al pie del sheet de edicion de ronda (RF-503). El mockup nombra un solo
+     * puntaje base; con varias reglas, cada una muestra el suyo en su fila.
+     */
+    ayudaAjuste: (n: number) =>
+      `El puntaje que cambies acá vale solo para la Ronda ${n}. En las demás sigue el de la plantilla.`,
     guardar: 'GUARDAR RONDA',
   },
 

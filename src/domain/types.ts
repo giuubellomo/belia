@@ -27,6 +27,12 @@ export interface Regla {
   alcance: AlcanceRegla;
   asignacionUnica: boolean;
   orden: number;
+  /**
+   * Si viene, la regla existe solo en esa ronda (el numero de la RondaDefinida);
+   * en las demas no se muestra ni se pide. Sin el campo, vale en todas.
+   * Paso 5.4, ver registro: el mockup la dibuja como «Regla solo para esta ronda».
+   */
+  soloEnRonda?: number;
 }
 
 export interface RondaDefinida {

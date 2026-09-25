@@ -388,6 +388,7 @@ function snapshotDe(plantilla: Plantilla): Plantilla {
       alcance: regla.alcance,
       asignacionUnica: regla.asignacionUnica,
       orden: regla.orden,
+      soloEnRonda: regla.soloEnRonda,
     })),
     rondas: plantilla.rondas.map((ronda) => ({
       numero: ronda.numero,

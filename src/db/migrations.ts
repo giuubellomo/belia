@@ -22,6 +22,15 @@ export interface Migracion {
 
 export const MIGRACIONES: Migracion[] = [
   { version: 1, nombre: 'esquema inicial', sql: SCHEMA_SQL },
+  {
+    // Paso 5.4 (ver registro): una regla puede existir en una sola ronda de la
+    // plantilla. NULL = vale en todas. Es el numero de ronda y no una foreign key
+    // a ronda_plantilla: `actualizar` recrea reglas y rondas enteras, y las
+    // reglas se insertan antes que las rondas.
+    version: 2,
+    nombre: 'reglas de una sola ronda',
+    sql: 'ALTER TABLE regla_plantilla ADD COLUMN solo_en_ronda INTEGER CHECK (solo_en_ronda >= 1);',
+  },
 ];
 
 /** La version mas alta que conoce este build. */

@@ -12,19 +12,20 @@ export type ResultadoCierre =
   | { puede: true }
   | { puede: false; motivo: 'faltan_puntajes' | 'faltan_reglas'; reglas?: Regla[] };
 
+/** Las reglas que existen en esa ronda: las de todas, mas las que son solo de ella. */
+export function reglasDeLaRonda(plantilla: Plantilla, numeroRonda: number): Regla[] {
+  return plantilla.reglas.filter(
+    (regla) => regla.soloEnRonda === undefined || regla.soloEnRonda === numeroRonda,
+  );
+}
+
 /** Puntaje que vale una regla en una ronda concreta: el ajuste si existe, si no el base. */
 export function puntajeDeReglaEnRonda(
   plantilla: Plantilla,
   numeroRonda: number,
   reglaId: string,
 ): number {
-  const regla = plantilla.reglas.find((r) => r.id === reglaId);
-  if (regla === undefined) {
-    // Solo pasa si la plantilla y las marcas se desincronizaron, y eso nunca
-    // deberia ocurrir: la partida usa un snapshot congelado (C-5). Mejor
-    // romper fuerte que devolver 0 y falsear un puntaje en silencio.
-    throw new Error(`La regla ${reglaId} no existe en la plantilla ${plantilla.id}`);
-  }
+  const regla = reglaEnRonda(plantilla, numeroRonda, reglaId);
 
   // RF-503: el ajuste de la ronda pisa al puntaje base. Una plantilla de rondas
   // ilimitadas no tiene RondaDefinida para las rondas nuevas: ahi vale el base.
@@ -47,7 +48,7 @@ export function todosCargaron(
 
 /** RF-706: las reglas de alcance 'todas' tienen que estar asignadas a alguien. */
 export function reglasSinAsignar(ronda: RondaJugada, plantilla: Plantilla): Regla[] {
-  return plantilla.reglas.filter((regla) => {
+  return reglasDeLaRonda(plantilla, ronda.numero).filter((regla) => {
     if (regla.alcance !== 'todas') return false;
     return !ronda.entradas.some((entrada) => regla.id in entrada.marcas);
   });
@@ -79,10 +80,7 @@ export function marcarRegla(
   reglaId: string,
   participanteId: string,
 ): RondaJugada {
-  const regla = plantilla.reglas.find((r) => r.id === reglaId);
-  if (regla === undefined) {
-    throw new Error(`La regla ${reglaId} no existe en la plantilla ${plantilla.id}`);
-  }
+  const regla = reglaEnRonda(plantilla, ronda.numero, reglaId);
 
   // C-4: el puntaje se congela ahora, con lo que la regla vale en ESTA ronda.
   const puntos = puntajeDeReglaEnRonda(plantilla, ronda.numero, reglaId);
@@ -140,4 +138,21 @@ export function numeroRondaEnCurso(rondas: RondaJugada[]): number {
   const enCurso = rondas.find((ronda) => ronda.estado === 'en_curso');
   if (enCurso !== undefined) return enCurso.numero;
   return rondas.reduce((mayor, ronda) => Math.max(mayor, ronda.numero), 1);
+}
+
+/**
+ * La regla, si existe en esa ronda. Si no, rompe: solo pasa si la plantilla y
+ * las marcas se desincronizaron, y eso nunca deberia ocurrir porque la partida
+ * usa un snapshot congelado (C-5). Mejor romper fuerte que devolver 0 y
+ * falsear un puntaje en silencio.
+ */
+function reglaEnRonda(plantilla: Plantilla, numeroRonda: number, reglaId: string): Regla {
+  const regla = plantilla.reglas.find((r) => r.id === reglaId);
+  if (regla === undefined) {
+    throw new Error(`La regla ${reglaId} no existe en la plantilla ${plantilla.id}`);
+  }
+  if (regla.soloEnRonda !== undefined && regla.soloEnRonda !== numeroRonda) {
+    throw new Error(`La regla ${reglaId} es solo de la ronda ${regla.soloEnRonda}, no de la ${numeroRonda}`);
+  }
+  return regla;
 }
