@@ -6,7 +6,7 @@ import { Boton } from '@/components/Boton';
 import { Card } from '@/components/Card';
 import { Chip } from '@/components/Chip';
 import { Popup } from '@/components/Popup';
-import { ID_NUEVA } from '@/hooks/useBorradorDePlantilla';
+import { ID_NUEVA, nombreDeCopia } from '@/hooks/useBorradorDePlantilla';
 import { usePlantillas } from '@/hooks/usePlantillas';
 import { es } from '@/i18n/es';
 import * as plantillas from '@/repositories/plantillas';
@@ -17,9 +17,10 @@ import { AREA_TOCABLE_MINIMA, colores, espacios, tipografia } from '@/theme/toke
 /**
  * Lista de plantillas (paso 5.1, RF-303 a RF-305).
  *
- * Las predefinidas llevan el sello «Predefinida»: se duplican, pero no se editan
- * ni se borran (el repositorio tambien lo impide). Las propias se tocan para
- * editarlas, y borrarlas pide confirmacion (RNF-6).
+ * Las predefinidas llevan el sello «Predefinida»: no se editan ni se borran (el
+ * repositorio tambien lo impide). Tocarlas abre el editor igual, para ver lo que
+ * traen, y guardar ahi crea una copia (registro, cambio 64). Las propias se tocan
+ * para editarlas, y borrarlas pide confirmacion (RNF-6).
  */
 export default function ListaDePlantillas() {
   const router = useRouter();
@@ -105,7 +106,7 @@ function FilaDePlantilla({ plantilla, onEditar, onDuplicar, onBorrar }: FilaProp
 
   return (
     <Card
-      onPress={plantilla.esPredefinida ? undefined : onEditar}
+      onPress={onEditar}
       etiqueta={`${plantilla.nombre}. ${resumen}`}
       style={styles.card}
     >
@@ -145,16 +146,6 @@ function Accion({ texto, onPress }: { texto: string; onPress: () => void }) {
       <Text style={styles.accionTexto}>{texto}</Text>
     </Pressable>
   );
-}
-
-/**
- * RF-304: «Karioka (copia)», y si ese nombre ya esta, «Karioka (copia 2)». La base
- * no exige nombres unicos, pero dos plantillas con el mismo nombre no se distinguen.
- */
-function nombreDeCopia(nombre: string, ocupados: string[]): string {
-  let numero = 1;
-  while (ocupados.includes(es.plantillas.nombreCopia(nombre, numero))) numero += 1;
-  return es.plantillas.nombreCopia(nombre, numero);
 }
 
 const styles = StyleSheet.create({

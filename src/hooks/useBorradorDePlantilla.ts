@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import type { Regla, RondaDefinida } from '@/domain/types';
+import { es } from '@/i18n/es';
 import { nuevoId } from '@/repositories/comun';
 import * as plantillas from '@/repositories/plantillas';
 import type { DatosPlantilla, PlantillaGuardada } from '@/repositories/plantillas';
@@ -37,6 +38,8 @@ export interface BorradorDePlantilla {
   /** null mientras se lee la plantilla, o si el id no existe. */
   borrador: DatosPlantilla | null;
   esNueva: boolean;
+  /** Es predefinida (RF-303): se ve y se cambia, pero guardar crea una copia. */
+  esPredefinida: boolean;
   /** Hay cambios sin guardar. */
   sucio: boolean;
   cargando: boolean;
@@ -53,7 +56,10 @@ export interface BorradorDePlantilla {
   borrarRonda: (numero: number) => void;
   /** Intercambia la ronda con la de al lado. Objetivo, ajustes y reglas propias viajan con ella. */
   moverRonda: (numero: number, direccion: -1 | 1) => void;
-  /** Escribe la plantilla entera. Si falla, deja pasar el error. */
+  /**
+   * Escribe la plantilla entera. Si es predefinida, la escribe como una plantilla
+   * nueva y la original queda intacta. Si falla, deja pasar el error.
+   */
   guardar: () => Promise<void>;
 }
 
@@ -69,6 +75,7 @@ export function useBorradorDePlantilla(id: string): BorradorDePlantilla {
 
   const esNueva = id === ID_NUEVA;
   const guardada = lista.find((plantilla) => plantilla.id === id);
+  const esPredefinida = guardada?.esPredefinida ?? false;
 
   const [borrador, setBorrador] = useState<DatosPlantilla | null>(esNueva ? BORRADOR_NUEVO : null);
 
@@ -83,6 +90,7 @@ export function useBorradorDePlantilla(id: string): BorradorDePlantilla {
   return {
     borrador,
     esNueva,
+    esPredefinida,
     sucio: borrador !== null && enJson(borrador) !== enJson(original),
     cargando,
     cambiar: (cambio) => setBorrador((previo) => (previo === null ? previo : { ...previo, ...cambio })),
@@ -195,8 +203,45 @@ export function useBorradorDePlantilla(id: string): BorradorDePlantilla {
         // Sin rondas definidas, la plantilla es de rondas libres (como Simple).
         rondasIlimitadas: borrador.rondas.length === 0,
       };
+      if (esPredefinida) {
+        // Sin cambiarle el nombre seria otra «Karioka»: se llama como una copia (RF-304).
+        const nombre =
+          datos.nombre === guardada?.nombre
+            ? nombreDeCopia(datos.nombre, lista.map((otra) => otra.nombre))
+            : datos.nombre;
+        await mutar(() => plantillas.crear(conIdsNuevos({ ...datos, nombre })));
+        return;
+      }
       await mutar(() => (esNueva ? plantillas.crear(datos) : plantillas.actualizar({ id, ...datos })));
     },
+  };
+}
+
+/**
+ * RF-304: «Karioka (copia)», y si ese nombre ya esta, «Karioka (copia 2)». La base
+ * no exige nombres unicos, pero dos plantillas con el mismo nombre no se distinguen.
+ */
+export function nombreDeCopia(nombre: string, ocupados: string[]): string {
+  let numero = 1;
+  while (ocupados.includes(es.plantillas.nombreCopia(nombre, numero))) numero += 1;
+  return es.plantillas.nombreCopia(nombre, numero);
+}
+
+/**
+ * Las reglas de una predefinida ya existen en la base con esos ids: la copia
+ * las necesita nuevas, y los ajustes de cada ronda se reapuntan a ellas.
+ */
+function conIdsNuevos(datos: DatosPlantilla): DatosPlantilla {
+  const idNuevo = new Map(datos.reglas.map((regla) => [regla.id, nuevoId()]));
+  return {
+    ...datos,
+    reglas: datos.reglas.map((regla) => ({ ...regla, id: idNuevo.get(regla.id)! })),
+    rondas: datos.rondas.map((ronda) => ({
+      ...ronda,
+      ajustes: Object.fromEntries(
+        Object.entries(ronda.ajustes).map(([reglaId, puntaje]) => [idNuevo.get(reglaId)!, puntaje]),
+      ),
+    })),
   };
 }
 

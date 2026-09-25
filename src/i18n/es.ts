@@ -141,6 +141,10 @@ export const es = {
     ayudaSinRondas: 'Sin rondas definidas se juegan las que quieran, y cada regla vale siempre lo mismo.',
     agregarRonda: 'Agregar ronda',
     guardar: 'GUARDAR PLANTILLA',
+    // Una predefinida se abre para verla; guardar crea una copia (registro, cambio 64)
+    verPredefinida: 'Plantilla predefinida',
+    ayudaPredefinida: 'Esta plantilla no se modifica. Si cambiás algo, al guardar se crea una copia con tus cambios.',
+    guardarCopia: 'GUARDAR COMO COPIA',
   },
 
   regla: {

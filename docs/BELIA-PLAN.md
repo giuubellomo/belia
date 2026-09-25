@@ -746,6 +746,8 @@ si más adelante entra color, entra por los tokens y en un solo lugar.
   predefinidas llevan el sello «Predefinida» en lugar del candado y solo ofrecen Duplicar;
   las propias se tocan para editarlas y ofrecen Duplicar y Borrar, con confirmación. Se
   entra desde el ícono del pie del Home. Header nativo, con el título y el botón de volver.
+  **Después del 5.4** (cambio 64): las predefinidas también se tocan. Abren el editor para
+  ver lo que traen, y guardar ahí crea una copia; la original no cambia.
 
   **Checkpoint:** verificado en el teléfono: duplicar Karioka dos veces da «Karioka (copia)»
   y «Karioka (copia 2)», borrar pide confirmación, y la copia sobrevive al reinicio.
@@ -1110,3 +1112,9 @@ Durante el paso 5.4 (rondas y ajuste por ronda):
 | 61 | Las rondas se reordenan con flechas ↑ ↓, como las reglas (cambio 58). Moverla o borrarla arrastra su objetivo, sus ajustes y sus reglas propias; al borrar, las siguientes bajan un número. | Misma razón que el cambio 58. Decisión de la usuaria. El número de la ronda es su orden (`ronda_plantilla` no tiene `orden`). |
 | 62 | El sheet de la ronda guarda todo recién con GUARDAR RONDA. El ajuste se edita de a 5, entre 5 y 500, con el signo de la regla; si vuelve al base, el ajuste se borra. «Eliminar» va al pie, como en el sheet de regla (cambio 59). Cada regla ajustada dice su base en la fila («ajustado (base −20)»), y la ayuda del pie no nombra un puntaje. En una regla de una sola ronda, «En todas las rondas» se llama «Obligatoria». Sin rondas, la sección explica que se juegan las que quieran. | Los topes de la regla: el ajuste nunca puede ser 0 (`CHECK`). El mockup nombra un solo base en la ayuda y el sheet tiene varias reglas. «En todas las rondas» no tiene sentido en una regla que existe en una sola. |
 | 63 | `expo ~57.0.25`, `expo-linking ~57.0.11`, `expo-router ~57.0.23` (Stack actualizado). | `npx expo install --check` pedía esos parches al cerrar el paso; se corrió `--fix` como indica el Stack. |
+
+Después del paso 5.4:
+
+| # | Cambio | Motivo |
+|---|---|---|
+| 64 | **Las predefinidas se abren en el editor.** Título «Plantilla predefinida», una línea que avisa que no se modifica, y GUARDAR COMO COPIA al pie: guardar crea una plantilla propia con ids de regla nuevos y los ajustes reapuntados. Si no se le cambió el nombre, se llama como una copia («Karioka (copia)», RF-304). `nombreDeCopia` pasó de la lista al hook para que la usen las dos pantallas. | En el 5.1 las predefinidas no se podían tocar, y no había forma de ver qué reglas y rondas traían sin duplicarlas. Decisión de la usuaria entre esto y un editor en solo lectura. RF-303 se sigue cumpliendo: la original no se edita, y el repositorio lo sigue impidiendo. |

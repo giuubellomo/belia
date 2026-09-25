@@ -37,7 +37,8 @@ const LARGO_MAXIMO_NOMBRE = 30;
  *
  * El editor trabaja sobre un borrador en memoria y escribe entero al tocar
  * GUARDAR PLANTILLA, como el mockup (ver registro, cambio 54): por eso volver
- * con cambios sin guardar pregunta antes de descartarlos.
+ * con cambios sin guardar pregunta antes de descartarlos. Una predefinida se
+ * abre igual, para ver lo que trae, y guardar crea una copia (cambio 64).
  */
 export default function EditorDePlantilla() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -45,6 +46,7 @@ export default function EditorDePlantilla() {
   const {
     borrador,
     esNueva,
+    esPredefinida,
     sucio,
     cargando,
     cambiar: cambiarBorrador,
@@ -119,12 +121,14 @@ export default function EditorDePlantilla() {
       <View style={styles.encabezado}>
         <BotonIcono icono={iconos.atras} etiqueta={es.comun.volver} tamano={36} onPress={volver} />
         <Text accessibilityRole="header" style={styles.titulo}>
-          {esNueva ? es.plantilla.nueva : es.plantilla.editar}
+          {esNueva ? es.plantilla.nueva : esPredefinida ? es.plantilla.verPredefinida : es.plantilla.editar}
         </Text>
       </View>
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.pantalla}>
         <ScrollView contentContainerStyle={styles.contenido} keyboardShouldPersistTaps="handled">
+          {esPredefinida && <Text style={styles.ayuda}>{es.plantilla.ayudaPredefinida}</Text>}
+
           <View style={styles.seccion}>
             <Etiqueta texto={es.plantilla.nombreEIcono} />
             <View style={styles.fila}>
@@ -189,7 +193,7 @@ export default function EditorDePlantilla() {
         <View style={styles.pie}>
           {errorAlGuardar && <Text style={styles.error}>{es.comun.errorGuardar}</Text>}
           <Boton
-            titulo={es.plantilla.guardar}
+            titulo={esPredefinida ? es.plantilla.guardarCopia : es.plantilla.guardar}
             deshabilitado={borrador.nombre.trim().length === 0 || cargando}
             onPress={() => void guardar()}
           />
