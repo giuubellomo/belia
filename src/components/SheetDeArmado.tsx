@@ -27,8 +27,8 @@ interface Props {
  *
  * Arriba, las plantillas de a dos por fila; abajo, los jugadores de esta
  * partida, que se cargan acá y no se guardan aparte (registro, cambio 65).
- * EMPEZAR se habilita con una plantilla y dos jugadores (RF-604); crear la
- * partida es el paso 6.2.
+ * EMPEZAR se habilita con una plantilla y dos jugadores (RF-604) y crea la
+ * partida (6.2).
  *
  * Asume que no hay partida en curso: el Home ya resolvió ese caso (4.2, A-5).
  */
@@ -37,6 +37,8 @@ export function SheetDeArmado({ visible, onCerrar }: Props) {
   const armado = useArmadoDePartida();
   // null = popup cerrado. Con un jugador se edita ese; con 'nuevo', se da de alta.
   const [jugadorEnEdicion, setJugadorEnEdicion] = useState<Participante | 'nuevo' | null>(null);
+  const [empezando, setEmpezando] = useState(false);
+  const [errorAlEmpezar, setErrorAlEmpezar] = useState(false);
 
   // Cada apertura arranca vacía: una partida no hereda lo que se eligió para otra.
   const { reiniciar } = armado;
@@ -44,7 +46,24 @@ export function SheetDeArmado({ visible, onCerrar }: Props) {
     if (!visible) return;
     reiniciar();
     setJugadorEnEdicion(null);
+    setEmpezando(false);
+    setErrorAlEmpezar(false);
   }, [visible, reiniciar]);
+
+  // Paso 6.2. Hasta que exista la pantalla de la partida (7.1) se vuelve al Home,
+  // que ya la muestra como «Continuar partida» (registro, cambio 69).
+  const empezar = async () => {
+    setEmpezando(true);
+    setErrorAlEmpezar(false);
+    try {
+      await armado.empezar();
+    } catch {
+      setErrorAlEmpezar(true);
+      setEmpezando(false);
+      return;
+    }
+    onCerrar();
+  };
 
   const editado = jugadorEnEdicion === 'nuevo' || jugadorEnEdicion === null ? undefined : jugadorEnEdicion;
   // RF-202: el nombre no se repite entre los jugadores de esta partida.
@@ -56,8 +75,14 @@ export function SheetDeArmado({ visible, onCerrar }: Props) {
       onCerrar={onCerrar}
       titulo={es.nuevaPartida.titulo}
       pie={
-        // Paso 6.2: crear la partida y navegar a ella.
-        <Boton titulo={es.nuevaPartida.empezar} deshabilitado={!armado.puedeEmpezar} onPress={() => {}} />
+        <View style={styles.pie}>
+          {errorAlEmpezar && <Text style={styles.error}>{es.comun.errorGuardar}</Text>}
+          <Boton
+            titulo={es.nuevaPartida.empezar}
+            deshabilitado={!armado.puedeEmpezar || empezando}
+            onPress={() => void empezar()}
+          />
+        </View>
       }
     >
       <View style={styles.seccion}>
@@ -172,6 +197,8 @@ function Grilla({ children }: { children: ReactNode[] }) {
 
 const styles = StyleSheet.create({
   seccion: { gap: espacios.xs },
+  pie: { gap: espacios.xs },
+  error: { ...tipografia.secundario, color: colores.tinta, textAlign: 'center' },
   grilla: { gap: espacios.sm },
   fila: { flexDirection: 'row', gap: espacios.sm },
   celda: { flex: 1 },

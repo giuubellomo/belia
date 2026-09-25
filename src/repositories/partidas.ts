@@ -12,6 +12,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { escribir, leer } from '@/db/client';
+import { MAXIMO_JUGADORES, MINIMO_JUGADORES } from '@/domain/participantes';
 import { marcarRegla as marcarEnRonda, puedeCerrarRonda } from '@/domain/rondas';
 import type {
   AvatarTipo,
@@ -25,15 +26,18 @@ import type {
 } from '@/domain/types';
 
 import { agrupar, ahora, nuevoId } from './comun';
-import { participantesDesdeBase } from './participantes';
 import { plantillaDesdeBase } from './plantillas';
 
 export interface DatosPartida {
   /** Lo pone quien llama: el nombre por defecto es texto de interfaz (A-4). */
   nombre: string;
   plantillaId: string;
-  /** En el orden en que se van a mostrar. */
-  participanteIds: string[];
+  /**
+   * Los jugadores del armado, en el orden en que se van a mostrar. Son de esta
+   * partida y no estan en la tabla `participante` (registro, cambio 65): se
+   * guardan directo en `partida_participante`, con el id que traen.
+   */
+  participantes: Participante[];
 }
 
 interface FilaPartida {
@@ -94,7 +98,7 @@ export function obtener(id: string): Promise<Partida | null> {
 // ---------------------------------------------------------------------------
 
 /**
- * Paso 6.2. Congela la plantilla y los participantes tal como estan ahora y crea
+ * Paso 6.2. Congela la plantilla tal como esta ahora, guarda a los jugadores y crea
  * las rondas: la 1 en curso y el resto bloqueadas. Con rondas ilimitadas se crea
  * solo la 1; las siguientes nacen al cerrar la anterior.
  */
@@ -107,8 +111,15 @@ export function crear(datos: DatosPartida): Promise<Partida> {
       throw new Error('Ya hay una partida en curso: hay que terminarla antes de crear otra (A-5)');
     }
 
-    if (new Set(datos.participanteIds).size !== datos.participanteIds.length) {
+    const { participantes } = datos;
+    if (new Set(participantes.map((p) => p.id)).size !== participantes.length) {
       throw new Error('Un participante no puede estar dos veces en la misma partida');
+    }
+    // RF-604 y RF-605: el armado ya no deja pasar otra cantidad.
+    if (participantes.length < MINIMO_JUGADORES || participantes.length > MAXIMO_JUGADORES) {
+      throw new Error(
+        `Una partida se juega entre ${MINIMO_JUGADORES} y ${MAXIMO_JUGADORES}, no con ${participantes.length}`,
+      );
     }
 
     const guardada = await plantillaDesdeBase(db, datos.plantillaId);
@@ -119,7 +130,6 @@ export function crear(datos: DatosPartida): Promise<Partida> {
       throw new Error(`La plantilla ${plantilla.id} no tiene rondas y no es de rondas ilimitadas`);
     }
 
-    const participantes = await participantesDesdeBase(db, datos.participanteIds);
     const id = nuevoId();
 
     await db.runAsync(

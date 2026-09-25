@@ -115,7 +115,7 @@ export function archivar(id: string): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// Para otros repositorios. Reciben el `db` de una tarea ya abierta.
+// Internas
 // ---------------------------------------------------------------------------
 
 async function duenoDesdeBase(db: SQLiteDatabase): Promise<Participante | null> {
@@ -123,28 +123,4 @@ async function duenoDesdeBase(db: SQLiteDatabase): Promise<Participante | null> 
     `SELECT ${COLUMNAS} FROM participante WHERE es_dueno = 1`,
   );
   return fila === null ? null : aParticipante(fila);
-}
-
-/**
- * Los participantes con esos ids, en el mismo orden en que se pidieron.
- * Si falta alguno, corta: armar una partida con un hueco no tiene arreglo despues.
- */
-export async function participantesDesdeBase(
-  db: SQLiteDatabase,
-  ids: string[],
-): Promise<Participante[]> {
-  if (ids.length === 0) return [];
-
-  const marcadores = ids.map(() => '?').join(', ');
-  const filas = await db.getAllAsync<FilaParticipante>(
-    `SELECT ${COLUMNAS} FROM participante WHERE id IN (${marcadores})`,
-    ids,
-  );
-  const porId = new Map(filas.map((fila) => [fila.id, aParticipante(fila)]));
-
-  return ids.map((id) => {
-    const participante = porId.get(id);
-    if (participante === undefined) throw new Error(`No existe el participante ${id}`);
-    return participante;
-  });
 }

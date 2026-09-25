@@ -1,8 +1,12 @@
 import { useCallback, useState } from 'react';
 
 import { MAXIMO_JUGADORES, puedeEmpezar } from '@/domain/participantes';
-import type { Participante } from '@/domain/types';
+import type { Partida, Participante } from '@/domain/types';
+import { es } from '@/i18n/es';
 import { nuevoId } from '@/repositories/comun';
+import * as partidas from '@/repositories/partidas';
+
+import { mutar } from './useConsulta';
 
 /** Nombre y avatar: lo que carga el popup. El id lo pone el armado. */
 type DatosJugador = Omit<Participante, 'id'>;
@@ -20,6 +24,11 @@ export interface ArmadoDePartida {
   reiniciar: () => void;
   hayLugar: boolean;
   puedeEmpezar: boolean;
+  /**
+   * Crea la partida con lo elegido (paso 6.2) y recarga los hooks montados: el
+   * Home pasa a mostrarla. Si falla, deja pasar el error.
+   */
+  empezar: () => Promise<Partida>;
 }
 
 /**
@@ -53,5 +62,16 @@ export function useArmadoDePartida(): ArmadoDePartida {
     reiniciar,
     hayLugar: jugadores.length < MAXIMO_JUGADORES,
     puedeEmpezar: puedeEmpezar(plantillaId !== null, jugadores.length),
+    empezar: () => {
+      if (plantillaId === null) return Promise.reject(new Error('No hay plantilla elegida'));
+      return mutar(() =>
+        partidas.crear({
+          // A-4: «Partida del 25/9». El mockup no tiene donde editarlo al armar.
+          nombre: es.nuevaPartida.nombrePorDefecto(new Date()),
+          plantillaId,
+          participantes: jugadores,
+        }),
+      );
+    },
   };
 }

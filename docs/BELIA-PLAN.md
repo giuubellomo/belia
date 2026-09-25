@@ -831,7 +831,7 @@ si más adelante entra color, entra por los tokens y en un solo lugar.
   jugadores, nombre repetido, editar y eliminar un jugador, el tope de 8 y que cada
   apertura arranca vacía.
 
-- [ ] **6.2 — Crear la partida** (RF-606, A-4)
+- [x] **6.2 — Crear la partida** (RF-606, A-4)
 
   Al confirmar:
   1. armar el objeto `Plantilla` completo desde los repositorios
@@ -848,6 +848,17 @@ si más adelante entra color, entra por los tokens y en un solo lugar.
   **Checkpoint:** después de crear la partida, editá la plantilla original y volvé a abrir la
   partida: **no cambió nada**. Si cambió, el snapshot está mal y hay que arreglarlo antes de
   seguir.
+
+  **Cómo quedó** (ver registro, cambios 69 y 70): EMPEZAR llama a `empezar` de
+  `useArmadoDePartida`, que crea la partida por `mutar` con el nombre de A-4. `partidas.crear`
+  recibe los jugadores del armado y valida que sean entre 2 y 8 y sin ids repetidos. **No
+  navega todavía:** hasta el 7.1 se vuelve al Home, que pasa a mostrar «Continuar partida».
+  El checkpoint, sin pantalla de partida, se verificó contra SQLite (editar y borrar la
+  plantilla deja la partida idéntica) y en el teléfono con el resumen del Home.
+
+  Verificado en el teléfono: crear la partida, el checkpoint con el resumen del Home, que
+  sobrevive al reinicio y el camino de A-5 (terminar la anterior abre el armado). Con eso
+  quedan cerrados también lo diferido de los cambios 48 y 68.
 
 ---
 
@@ -1149,3 +1160,10 @@ Durante el paso 6.1 (bottom sheet de armado):
 | 66 | **El dueño no aparece en el armado.** Si juega, se agrega como cualquiera. Se fue el texto `nuevaPartida.tu`. **Pendiente:** la bienvenida (4.1) sigue pidiendo nombre y avatar y dice «En las partidas vas a aparecer como "Tú"», que ya no es cierto. La usuaria prefiere sacarla; quedó anotado en el 4.1, sin paso asignado todavía. | Decisión de la usuaria, en lugar de «Tú» preseleccionado como dibuja el mockup y pedía el paso. |
 | 67 | La grilla «Tipo de juego» muestra todas las plantillas, predefinidas primero, y no lleva las cards «Próximamente». Se fue el texto `nuevaPartida.proximamente`. | Decisión de la usuaria. Con plantillas propias la grilla ya no queda vacía, y «Próximamente» prometía algo que el plan no tiene. |
 | 68 | EMPEZAR se habilita según `puedeEmpezar` (RF-604) pero no hace nada hasta el 6.2. El camino de A-5 (terminar la anterior y abrir el armado) se prueba en el 6.2: es un popup que se cierra y un sheet que se abre, y en iOS hay que verificar que el segundo aparezca. | Como el cambio 46: no hay partida que crear hasta el 6.2, y sin partida en curso ese camino no se puede recorrer. |
+
+Durante el paso 6.2 (crear la partida):
+
+| # | Cambio | Motivo |
+|---|---|---|
+| 69 | EMPEZAR crea la partida, cierra el sheet y **se queda en el Home**, que ya la muestra como «Continuar partida». Navegar a `partida/[id]` se cablea en el 7.1. | La pantalla de la partida recién existe en el 7.1, y navegar a una ruta inexistente rompe el router (cambio 46). Decisión de la usuaria, en lugar de una pantalla mínima que el mockup no tiene. |
+| 70 | `DatosPartida.participanteIds` pasó a `participantes: Participante[]`: los jugadores del armado entran directo a `partida_participante` con su id. `crear` valida la cantidad (RF-604, RF-605) además de los repetidos. Se fue `participantesDesdeBase`, que solo usaba `crear`. El nombre de A-4 no se puede editar al armar: el mockup no tiene dónde. | Es la consecuencia del cambio 65 que ese cambio dejó para este paso. |
