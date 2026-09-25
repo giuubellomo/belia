@@ -7,6 +7,7 @@ import { Boton } from '@/components/Boton';
 import { BotonIcono } from '@/components/BotonIcono';
 import { Card } from '@/components/Card';
 import { Popup } from '@/components/Popup';
+import { SheetDeArmado } from '@/components/SheetDeArmado';
 import { Vacio } from '@/components/Vacio';
 import { numeroRondaEnCurso } from '@/domain/rondas';
 import type { Partida } from '@/domain/types';
@@ -31,9 +32,9 @@ export default function Home() {
   const { partida, cargando, mutar } = usePartidaEnCurso();
   const [confirmando, setConfirmando] = useState(false);
   const [errorAlTerminar, setErrorAlTerminar] = useState(false);
+  const [armando, setArmando] = useState(false);
 
-  /** Paso 6.1: el sheet de armado todavia no existe. */
-  const abrirArmado = () => {};
+  const abrirArmado = () => setArmando(true);
 
   const nuevoJuego = () => {
     if (partida === null) {
@@ -104,6 +105,8 @@ export default function Home() {
           </View>
         </Popup>
       )}
+
+      <SheetDeArmado visible={armando} onCerrar={() => setArmando(false)} />
     </SafeAreaView>
   );
 }

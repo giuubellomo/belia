@@ -60,18 +60,16 @@ export const es = {
   nuevaPartida: {
     titulo: 'Nueva partida',
     tipoDeJuego: 'Tipo de juego',
-    proximamente: 'Próximamente',
     participantes: 'Participantes',
     agregar: 'Agregar',
     empezar: 'EMPEZAR',
-    /** A-4. El dueño del dispositivo aparece como «Tú» en el armado. */
+    /** A-4. */
     nombrePorDefecto: (fecha: Date) => `Partida del ${fecha.getDate()}/${fecha.getMonth() + 1}`,
-    tu: 'Tú',
   },
 
   participante: {
     agregarTitulo: 'Agregar participante',
-    /** El mismo popup, con los datos cargados: alta en el 6.1, edicion en el 9.1. */
+    /** El mismo popup, con los datos cargados: al tocar un jugador del armado (6.1). */
     editarTitulo: 'Editar participante',
     nombre: 'Nombre',
     nombreEjemplo: 'Ej: Sol',

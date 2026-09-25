@@ -1,60 +1,41 @@
 import { useEffect, useState } from 'react';
+import { Pressable, StyleSheet, Text } from 'react-native';
 
-import type { Participante } from '@/domain/types';
-import { useParticipantes } from '@/hooks/useParticipantes';
 import { es } from '@/i18n/es';
-import * as participantes from '@/repositories/participantes';
+import { AREA_TOCABLE_MINIMA, colores, tipografia } from '@/theme/tokens';
 
 import { FormularioParticipante, type DatosFormularioParticipante } from './FormularioParticipante';
 import { Popup } from './Popup';
 
 interface Props {
   visible: boolean;
-  /** Cancelar, la ✕, el velo o el boton atras. No guarda nada. */
+  /** Cancelar, la ✕, el velo o el boton atras. No cambia nada. */
   onCerrar: () => void;
-  /** Si viene, el popup edita ese participante (RF-203); si no, da de alta uno nuevo (RF-201). */
-  participante?: Participante;
-  /** Corre despues de guardar: el armado (6.1) lo usa para preseleccionar al recien creado. */
-  onGuardado?: (participante: Participante) => void;
+  /** Si viene, el popup edita a ese jugador; si no, da de alta uno nuevo. */
+  participante?: DatosFormularioParticipante;
+  /** Con quienes no puede repetir el nombre (RF-202), sin el que se esta editando. */
+  nombresOcupados: string[];
+  /** Recibe el nombre ya normalizado. El popup se cierra solo despues. */
+  onConfirmar: (datos: DatosFormularioParticipante) => void;
+  /** Solo al editar: saca al jugador. */
+  onEliminar?: () => void;
 }
 
 /**
- * Popup «Agregar participante» del mockup (paso 4.3, RF-201 a RF-203).
+ * Popup «Agregar participante» del mockup (pasos 4.3 y 6.1).
  *
- * El formulario y la validacion del nombre son los del paso 4.1; lo que agrega
- * este componente es la escritura. Guarda apenas se confirma (RNF-2): no hay un
- * borrador que se pierda al cerrar.
- *
- * Lo montan el sheet de armado (6.1) y la configuracion (9.1). El error de
- * guardado lo muestra el formulario, asi que aca no se atrapa.
+ * No escribe en la base: los jugadores son de la partida y viven en el armado
+ * hasta EMPEZAR (registro, cambio 65). Devuelve los datos a quien lo montó.
+ * El formulario y la validación del nombre son los del paso 4.1.
  */
-export function PopupParticipante({ visible, onCerrar, participante, onGuardado }: Props) {
-  const { participantes: activos, mutar } = useParticipantes();
-
+export function PopupParticipante({ visible, onCerrar, participante, nombresOcupados, onConfirmar, onEliminar }: Props) {
   // Cada apertura monta un formulario nuevo. El Modal queda montado aunque este
   // cerrado: sin esto, al reabrirlo seguiria el nombre a medio escribir de la vez
-  // anterior, o los datos del participante que se edito recien.
+  // anterior, o los datos del jugador que se edito recien.
   const [apertura, setApertura] = useState(0);
   useEffect(() => {
     if (visible) setApertura((n) => n + 1);
   }, [visible]);
-
-  // RF-202: el que se esta editando no tiene que chocar consigo mismo.
-  const nombresOcupados = activos.filter((otro) => otro.id !== participante?.id).map((otro) => otro.nombre);
-
-  const confirmar = async (datos: DatosFormularioParticipante) => {
-    const guardado =
-      participante === undefined
-        ? await mutar(() => participantes.crear(datos))
-        : await mutar(async () => {
-            const actualizado: Participante = { ...participante, ...datos };
-            await participantes.actualizar(actualizado);
-            return actualizado;
-          });
-
-    onGuardado?.(guardado);
-    onCerrar();
-  };
 
   return (
     <Popup
@@ -67,10 +48,25 @@ export function PopupParticipante({ visible, onCerrar, participante, onGuardado 
         key={apertura}
         nombresOcupados={nombresOcupados}
         textoConfirmar={participante === undefined ? es.comun.agregar : es.comun.guardar}
-        onConfirmar={confirmar}
+        onConfirmar={async (datos) => {
+          onConfirmar(datos);
+          onCerrar();
+        }}
         onCancelar={onCerrar}
         inicial={participante}
       />
+
+      {/* Como en los sheets de regla y de ronda: al pie, en texto (cambio 59). */}
+      {onEliminar !== undefined && (
+        <Pressable accessibilityRole="button" onPress={onEliminar} style={styles.eliminar}>
+          <Text style={styles.eliminarTexto}>{es.comun.eliminar}</Text>
+        </Pressable>
+      )}
     </Popup>
   );
 }
+
+const styles = StyleSheet.create({
+  eliminar: { minHeight: AREA_TOCABLE_MINIMA, alignItems: 'center', justifyContent: 'center' },
+  eliminarTexto: { ...tipografia.secundario, fontWeight: '700', color: colores.tinta },
+});

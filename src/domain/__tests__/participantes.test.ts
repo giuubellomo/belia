@@ -1,4 +1,4 @@
-import { LARGO_MAXIMO_NOMBRE, normalizarNombre, validarNombre } from '../participantes';
+import { LARGO_MAXIMO_NOMBRE, normalizarNombre, puedeEmpezar, validarNombre } from '../participantes';
 
 describe('validarNombre (RF-202)', () => {
   test('un nombre comun pasa', () => {
@@ -35,5 +35,22 @@ describe('validarNombre (RF-202)', () => {
 describe('normalizarNombre', () => {
   test('saca espacios de los costados y junta los del medio', () => {
     expect(normalizarNombre('  Ana   María ')).toBe('Ana María');
+  });
+});
+
+describe('puedeEmpezar (RF-604, RF-605)', () => {
+  test('sin plantilla no se empieza, aunque haya jugadores', () => {
+    expect(puedeEmpezar(false, 4)).toBe(false);
+  });
+
+  test('hacen falta al menos dos jugadores', () => {
+    expect(puedeEmpezar(true, 0)).toBe(false);
+    expect(puedeEmpezar(true, 1)).toBe(false);
+    expect(puedeEmpezar(true, 2)).toBe(true);
+  });
+
+  test('el tope es ocho', () => {
+    expect(puedeEmpezar(true, 8)).toBe(true);
+    expect(puedeEmpezar(true, 9)).toBe(false);
   });
 });

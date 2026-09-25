@@ -696,6 +696,12 @@ si más adelante entra color, entra por los tokens y en un solo lugar.
 
   **Checkpoint:** primera corrida pide los datos; la segunda va directo al home.
 
+  **Pendiente (cambio 66): sacar la bienvenida.** Desde que los jugadores son de la partida
+  y el dueño no aparece en el armado, pedirle nombre y avatar no sirve para nada, y su texto
+  («En las partidas vas a aparecer como "Tú"») ya no es cierto. La usuaria prefiere sacarla.
+  Todavía no tiene paso asignado: hay que ver qué más depende del dueño (el guard de
+  `_layout`, `useDueno`, el perfil del 9.1).
+
 - [x] **4.2 — Home** (RF-101 a RF-105)
 
   `app/index.tsx`. Consulta `partidas.obtenerEnCurso()` (vía `usePartidaEnCurso`, paso 2.5):
@@ -730,7 +736,8 @@ si más adelante entra color, entra por los tokens y en un solo lugar.
   guardó, y cada apertura monta un formulario limpio.
 
   **Checkpoint:** se crea un participante, se cierra y se reabre la app, y sigue ahí.
-  Diferido al paso 6.1, que es donde el popup se abre (cambio 49).
+  Diferido al paso 6.1, que es donde el popup se abre (cambio 49). **Dejó de aplicar con el
+  cambio 65:** los jugadores son de la partida y el popup ya no escribe en la base.
 
 ---
 
@@ -803,7 +810,7 @@ si más adelante entra color, entra por los tokens y en un solo lugar.
 
 # Fase 6 — Nueva partida
 
-- [ ] **6.1 — Bottom sheet de armado** (RF-601 a RF-605)
+- [x] **6.1 — Bottom sheet de armado** (RF-601 a RF-605)
 
   Grilla de plantillas de a dos por fila, grilla de participantes de a dos por fila con el
   dueño preseleccionado y un círculo de «agregar». Tope de 8 (RF-605).
@@ -813,12 +820,25 @@ si más adelante entra color, entra por los tokens y en un solo lugar.
   El sheet asume que **no hay ninguna partida en curso**: el home ya resolvió ese caso en el
   paso 4.2. Si igual llega a abrirse con una partida abierta, es un bug, no un caso a manejar.
 
+  **Cómo quedó** (ver registro, cambios 65 a 68): `SheetDeArmado`, montado en el Home, con
+  el estado en `useArmadoDePartida`. **Los jugadores son de la partida:** se cargan con el
+  popup del 4.3, se editan o se sacan tocándolos, y no se guardan aparte. El dueño no
+  aparece. La grilla de tipo de juego muestra todas las plantillas, sin «Próximamente».
+  `MINIMO_JUGADORES`, `MAXIMO_JUGADORES` y `puedeEmpezar` viven en `domain/participantes.ts`.
+  EMPEZAR se habilita pero todavía no hace nada: crear la partida es el 6.2.
+
+  Verificado en el teléfono: plantillas sin «Próximamente», EMPEZAR con plantilla y dos
+  jugadores, nombre repetido, editar y eliminar un jugador, el tope de 8 y que cada
+  apertura arranca vacía.
+
 - [ ] **6.2 — Crear la partida** (RF-606, A-4)
 
   Al confirmar:
   1. armar el objeto `Plantilla` completo desde los repositorios
   2. serializarlo en `partida.plantilla_snapshot` (C-5)
-  3. copiar nombre y avatar de cada participante en `partida_participante`
+  3. copiar nombre y avatar de cada participante en `partida_participante`. **Desde el
+     cambio 65 los jugadores llegan del armado, no de la tabla `participante`:**
+     `partidas.crear` tiene que recibir sus datos (id, nombre, avatar) en lugar de ids.
   4. crear las rondas: la 1 en `en_curso` y el resto en `bloqueada`.
      Si `rondasIlimitadas` es `true` (plantilla **Simple**, que no tiene rondas definidas),
      se crea **solo la ronda 1**; las siguientes nacen de a una al cerrar la anterior (7.5).
@@ -920,6 +940,8 @@ escribiendo una suma dentro de un componente, está mal.
 - [ ] **9.1 — Configuración** (RF-901 a RF-903)
 
   Perfil del dueño, administración de participantes y acceso a plantillas.
+  **Desde el cambio 65 no hay participantes guardados que administrar:** queda el perfil
+  del dueño y el acceso a plantillas.
 
 - [ ] **9.2 — Confirmaciones y estados vacíos** (RNF-6)
 
@@ -1118,3 +1140,12 @@ Después del paso 5.4:
 | # | Cambio | Motivo |
 |---|---|---|
 | 64 | **Las predefinidas se abren en el editor.** Título «Plantilla predefinida», una línea que avisa que no se modifica, y GUARDAR COMO COPIA al pie: guardar crea una plantilla propia con ids de regla nuevos y los ajustes reapuntados. Si no se le cambió el nombre, se llama como una copia («Karioka (copia)», RF-304). `nombreDeCopia` pasó de la lista al hook para que la usen las dos pantallas. | En el 5.1 las predefinidas no se podían tocar, y no había forma de ver qué reglas y rondas traían sin duplicarlas. Decisión de la usuaria entre esto y un editor en solo lectura. RF-303 se sigue cumpliendo: la original no se edita, y el repositorio lo sigue impidiendo. |
+
+Durante el paso 6.1 (bottom sheet de armado):
+
+| # | Cambio | Motivo |
+|---|---|---|
+| 65 | **Los jugadores son de la partida, no se guardan aparte.** Se cargan en el armado con el popup «Agregar participante», se editan o se sacan tocándolos (el popup suma «Eliminar» al pie) y viven en memoria hasta EMPEZAR; cada uno nace con un uuid. `PopupParticipante` ya no escribe en la base: devuelve los datos. «Sin repetir» (RF-202) es dentro de la partida. La tabla `participante` queda para el dueño; no hay migración. Consecuencias: el checkpoint del 4.3 deja de aplicar, archivar (RF-204, cambio 50) no se implementa, el 9.1 pierde la administración de participantes y `partidas.crear` recibe los datos de los jugadores en el 6.2. | Decisión de la usuaria: cada juego tiene su gente y no quiere una libreta de jugadores. Choca con RF-201 a RF-204 tal como el plan los interpretaba (4.3, 9.1). La partida ya guardaba su propia copia de cada jugador en `partida_participante`, sin foreign key, así que no necesita la tabla `participante`. |
+| 66 | **El dueño no aparece en el armado.** Si juega, se agrega como cualquiera. Se fue el texto `nuevaPartida.tu`. **Pendiente:** la bienvenida (4.1) sigue pidiendo nombre y avatar y dice «En las partidas vas a aparecer como "Tú"», que ya no es cierto. La usuaria prefiere sacarla; quedó anotado en el 4.1, sin paso asignado todavía. | Decisión de la usuaria, en lugar de «Tú» preseleccionado como dibuja el mockup y pedía el paso. |
+| 67 | La grilla «Tipo de juego» muestra todas las plantillas, predefinidas primero, y no lleva las cards «Próximamente». Se fue el texto `nuevaPartida.proximamente`. | Decisión de la usuaria. Con plantillas propias la grilla ya no queda vacía, y «Próximamente» prometía algo que el plan no tiene. |
+| 68 | EMPEZAR se habilita según `puedeEmpezar` (RF-604) pero no hace nada hasta el 6.2. El camino de A-5 (terminar la anterior y abrir el armado) se prueba en el 6.2: es un popup que se cierra y un sheet que se abre, y en iOS hay que verificar que el segundo aparezca. | Como el cambio 46: no hay partida que crear hasta el 6.2, y sin partida en curso ese camino no se puede recorrer. |
