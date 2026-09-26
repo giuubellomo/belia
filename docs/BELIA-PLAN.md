@@ -78,7 +78,7 @@ cambiala **acá** antes de empezar, no a mitad de camino.
 | A-1 | Karioka se precarga con 7 rondas (ver `seed.ts` en el paso 2.4). La usuaria puede duplicar la plantilla y editarla. | Provisional |
 | A-2 | El puntaje manual se carga **siempre como número positivo**; `modo_puntos` de la plantilla decide si entra sumando o restando al total. El signo de cada regla es propio de la regla y se guarda con signo. | **Cerrada** |
 | A-3 | No se elige la cantidad de rondas al armar la partida: se duplica la plantilla y se le sacan rondas. | Provisional |
-| A-4 | Nombre por defecto de la partida: `Partida del <d/m>`. Editable. | Provisional |
+| A-4 | ~~Nombre por defecto de la partida: `Partida del <d/m>`. Editable.~~ Desde el paso 7.1 (cambio 71): el nombre se escribe al armar la partida, es obligatorio y no se edita después. | **Cerrada** |
 | A-5 | Una sola partida en curso a la vez. Con una partida abierta, «Nuevo juego» sigue visible pero pide confirmación para terminar la anterior. | **Cerrada para el MVP** |
 | A-6 | El acumulado va en la fila del participante, a la derecha del puntaje de la ronda, más chico y en gris. | Provisional — **es un cambio de diseño, confirmalo antes del paso 7.3** |
 
@@ -867,7 +867,7 @@ si más adelante entra color, entra por los tokens y en un solo lugar.
 El corazón de la app. Todo el cálculo sale de las funciones de la fase 1: si te encontrás
 escribiendo una suma dentro de un componente, está mal.
 
-- [ ] **7.1 — Estructura de la pantalla** (RF-701, RF-702, RF-712)
+- [x] **7.1 — Estructura de la pantalla** (RF-701, RF-702, RF-712)
 
   `app/partida/[id].tsx`: encabezado con el nombre editable, lista de rondas (cerradas
   colapsadas, actual expandida, siguientes bloqueadas) y `TERMINAR` fijo abajo.
@@ -875,6 +875,18 @@ escribiendo una suma dentro de un componente, está mal.
   Activá `useKeepAwake()` (RF-713).
 
   **Checkpoint:** salir de la pantalla y volver desde el home deja todo igual.
+
+  **Cómo quedó** (ver registro, cambios 71 a 74): **el nombre no se edita acá**: se escribe
+  al armar la partida, arriba de todo en el sheet, y es obligatorio para EMPEZAR. Sin ✎ y
+  sin el chip de modo del mockup 5. Las rondas son `TarjetaDeRonda`: la cerrada resume objetivo y reglas (o el
+  mejor puntaje, en Simple), la bloqueada dice cuál la habilita, y la en juego muestra
+  solo su título y EN JUEGO: el resto es el 7.2. TERMINAR todavía no hace nada (8.1).
+  «Continuar partida» y EMPEZAR abren la pantalla. De paso se arregló `BottomSheet`: con el
+  teclado abierto se achica en lugar de salirse por arriba, y el armado cierra el teclado
+  al elegir plantilla, tocar un jugador o EMPEZAR.
+
+  Verificado en el teléfono: el nombre obligatorio al armar, EMPEZAR abre la partida, salir
+  y volver desde el Home deja todo igual, y el teclado del sheet.
 
 - [ ] **7.2 — Ronda activa** (RF-703, RF-704)
 
@@ -1167,3 +1179,12 @@ Durante el paso 6.2 (crear la partida):
 |---|---|---|
 | 69 | EMPEZAR crea la partida, cierra el sheet y **se queda en el Home**, que ya la muestra como «Continuar partida». Navegar a `partida/[id]` se cablea en el 7.1. | La pantalla de la partida recién existe en el 7.1, y navegar a una ruta inexistente rompe el router (cambio 46). Decisión de la usuaria, en lugar de una pantalla mínima que el mockup no tiene. |
 | 70 | `DatosPartida.participanteIds` pasó a `participantes: Participante[]`: los jugadores del armado entran directo a `partida_participante` con su id. `crear` valida la cantidad (RF-604, RF-605) además de los repetidos. Se fue `participantesDesdeBase`, que solo usaba `crear`. El nombre de A-4 no se puede editar al armar: el mockup no tiene dónde. | Es la consecuencia del cambio 65 que ese cambio dejó para este paso. |
+
+Durante el paso 7.1 (estructura de la pantalla):
+
+| # | Cambio | Motivo |
+|---|---|---|
+| 71 | **El nombre de la partida se escribe al armarla** (cambia A-4 y deja atrás lo del cambio 70): campo «Nombre de la partida» arriba de todo en el sheet, vacío y **obligatorio**. `puedeEmpezar` recibe el nombre, y `partidas.crear` lo limpia y rechaza uno vacío. `src/domain/partidas.ts` con `nombreDePartida`: sin espacios en los costados, máximo 30 caracteres. Ya no hay nombre por defecto (`nombrePorDefecto` se fue). En la partida el nombre es fijo: sin el ✎ del mockup 4 (se fue `partida.editarNombre`). | Decisión de la usuaria. Al principio del paso se hizo el ✎ con un popup; al probarlo prefirió elegir el nombre al armar y no editarlo después. 30 es el mismo tope que el nombre de una plantilla (cambio 56). |
+| 72 | Una ronda cerrada se resume como en el mockup: objetivo y las reglas de alcance `todas` con lo que valen en esa ronda. Sin objetivo ni reglas (Simple), «Mejor puntaje: Ana (+30)», con `mejoresDeRonda` nueva en `scoring.ts` (con tests): respeta `criterioVictoria`, y si empatan los nombra a todos. | Decisión de la usuaria. Quién hizo el mejor puntaje es cálculo: va al dominio, no a la tarjeta. |
+| 73 | Sin el chip «+ Modo: suma de puntos» del mockup 5. | Se probó como chip informativo y a la usuaria no le gustó. |
+| 74 | Con rondas ilimitadas se dibuja una ronda bloqueada más al final, que no existe en la base (mockup 5). La bloqueada no lleva candado. EMPEZAR ahora abre la partida: se cierra lo que dejó pendiente el cambio 69. | La siguiente ronda de Simple recién se crea al cerrar la actual (7.5). El candado tiene el mismo problema de emoji de color que el del cambio 52. |

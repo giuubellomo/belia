@@ -111,8 +111,9 @@ export default function Home() {
   );
 }
 
-/** RF-102: plantilla, cuantos juegan y en que ronda va. Paso 7.1: todavia no navega. */
+/** RF-102: plantilla, cuantos juegan y en que ronda va. Abre la partida (7.1). */
 function ContinuarPartida({ partida }: { partida: Partida }) {
+  const router = useRouter();
   const resumen = es.home.resumenPartida(
     partida.plantilla.nombre,
     partida.participantes.length,
@@ -120,7 +121,9 @@ function ContinuarPartida({ partida }: { partida: Partida }) {
   );
 
   return (
-    <Card onPress={() => {}} etiqueta={`${es.home.continuarPartida}. ${resumen}`} style={styles.card}>
+    <Card
+      onPress={() => router.push({ pathname: '/partida/[id]', params: { id: partida.id } })}
+      etiqueta={`${es.home.continuarPartida}. ${resumen}`} style={styles.card}>
       <View style={styles.cardTexto}>
         <Text style={styles.continuar}>{es.home.continuarPartida}</Text>
         <Text style={styles.resumen}>{resumen}</Text>

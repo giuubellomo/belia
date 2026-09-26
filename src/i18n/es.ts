@@ -63,8 +63,9 @@ export const es = {
     participantes: 'Participantes',
     agregar: 'Agregar',
     empezar: 'EMPEZAR',
-    /** A-4. */
-    nombrePorDefecto: (fecha: Date) => `Partida del ${fecha.getDate()}/${fecha.getMonth() + 1}`,
+    // El nombre se escribe al armar y es obligatorio (registro, cambio 71)
+    nombre: 'Nombre de la partida',
+    nombreEjemplo: 'Ej: Viernes de juegos',
   },
 
   participante: {
@@ -202,7 +203,10 @@ export const es = {
     bloqueada: (anterior: number) => `Se habilita al terminar la Ronda ${anterior}`,
     siguiente: 'SIGUIENTE',
     terminarPartida: 'TERMINAR PARTIDA',
-    editarNombre: 'Editar nombre',
+    /** «Bajó primero: −20 pts»: lo que vale una regla en esa ronda. */
+    reglaConPuntaje: (titulo: string, puntos: number) => `${titulo}: ${conSigno(puntos)} pts`,
+    /** Resumen de una ronda cerrada sin objetivo ni reglas: «Mejor puntaje: Ana (+30)». */
+    mejorPuntaje: (nombres: string[], puntos: number) => `Mejor puntaje: ${nombres.join(' y ')} (${conSigno(puntos)})`,
     sinCargar: 'Sin cargar',
     // RF-706 / RF-707: por que no se puede cerrar la ronda
     faltanPuntajes: 'Falta cargar el puntaje de todos',

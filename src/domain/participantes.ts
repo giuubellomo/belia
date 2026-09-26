@@ -6,6 +6,8 @@
  * jugadores se cargan para esa partida sola (registro, cambio 65).
  */
 
+import { nombreDePartida } from './partidas';
+
 export const LARGO_MAXIMO_NOMBRE = 20;
 
 /** RF-604: con menos no hay a quien ganarle. */
@@ -13,9 +15,17 @@ export const MINIMO_JUGADORES = 2;
 /** RF-605. */
 export const MAXIMO_JUGADORES = 8;
 
-/** RF-604: EMPEZAR se habilita con una plantilla elegida y entre 2 y 8 jugadores. */
-export function puedeEmpezar(hayPlantilla: boolean, jugadores: number): boolean {
-  return hayPlantilla && jugadores >= MINIMO_JUGADORES && jugadores <= MAXIMO_JUGADORES;
+/**
+ * RF-604: EMPEZAR se habilita con un nombre, una plantilla elegida y entre 2 y 8
+ * jugadores. El nombre es obligatorio desde el paso 7.1 (registro, cambio 71).
+ */
+export function puedeEmpezar(nombre: string, hayPlantilla: boolean, jugadores: number): boolean {
+  return (
+    nombreDePartida(nombre) !== null &&
+    hayPlantilla &&
+    jugadores >= MINIMO_JUGADORES &&
+    jugadores <= MAXIMO_JUGADORES
+  );
 }
 
 export type ErrorNombre = 'vacio' | 'largo' | 'repetido';

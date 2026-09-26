@@ -56,6 +56,8 @@ function Navegacion() {
         {/* El editor dibuja su propio encabezado (mockup 3) y confirma antes de salir
             con cambios sin guardar: sin gesto de arrastrar, la ‹ es la unica salida. */}
         <Stack.Screen name="plantillas/[id]" options={{ headerShown: false, gestureEnabled: false }} />
+        {/* La partida dibuja su propio encabezado, con el nombre editable (mockup 4). */}
+        <Stack.Screen name="partida/[id]" options={{ headerShown: false }} />
       </Stack.Protected>
     </Stack>
   );

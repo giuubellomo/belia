@@ -5,7 +5,7 @@
  * componente o de un repositorio, esta en el lugar equivocado.
  */
 
-import type { EntradaRonda, ModoPuntos, Partida } from './types';
+import type { EntradaRonda, ModoPuntos, Partida, Plantilla, RondaJugada } from './types';
 
 /** C-1: lo que hizo un participante en una ronda. */
 export function puntajeDeRonda(entrada: EntradaRonda, modo: ModoPuntos): number {
@@ -38,4 +38,28 @@ export function totalesDePartida(
     participanteId: participante.id,
     total: totalDeParticipante(partida, participante.id),
   }));
+}
+
+/**
+ * Quien hizo el mejor puntaje de una ronda, segun `criterioVictoria`: lo que
+ * resume una ronda cerrada sin objetivo ni reglas (paso 7.1, mockup 5). Si
+ * empatan, vienen todos. null si nadie cargo nada en esa ronda.
+ */
+export function mejoresDeRonda(
+  ronda: RondaJugada,
+  plantilla: Plantilla,
+): { participanteIds: string[]; puntaje: number } | null {
+  if (ronda.entradas.length === 0) return null;
+
+  const puntajes = ronda.entradas.map((entrada) => ({
+    participanteId: entrada.participanteId,
+    puntaje: puntajeDeRonda(entrada, plantilla.modoPuntos),
+  }));
+  const valores = puntajes.map((p) => p.puntaje);
+  const mejor = plantilla.criterioVictoria === 'menor' ? Math.min(...valores) : Math.max(...valores);
+
+  return {
+    participanteIds: puntajes.filter((p) => p.puntaje === mejor).map((p) => p.participanteId),
+    puntaje: mejor,
+  };
 }

@@ -1,7 +1,9 @@
+import { useRouter } from 'expo-router';
 import { useEffect, useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Keyboard, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import type { Participante } from '@/domain/types';
+import { LARGO_MAXIMO_NOMBRE_PARTIDA } from '@/domain/partidas';
+import type { Participante, Partida } from '@/domain/types';
 import { useArmadoDePartida } from '@/hooks/useArmadoDePartida';
 import { usePlantillas } from '@/hooks/usePlantillas';
 import { es } from '@/i18n/es';
@@ -11,6 +13,7 @@ import { colores, espacios, tipografia } from '@/theme/tokens';
 import { Avatar } from './Avatar';
 import { BottomSheet } from './BottomSheet';
 import { Boton } from './Boton';
+import { CampoTexto } from './CampoTexto';
 import { Card } from './Card';
 import { Etiqueta } from './Etiqueta';
 import { PopupParticipante } from './PopupParticipante';
@@ -34,6 +37,7 @@ interface Props {
  */
 export function SheetDeArmado({ visible, onCerrar }: Props) {
   const { plantillas } = usePlantillas();
+  const router = useRouter();
   const armado = useArmadoDePartida();
   // null = popup cerrado. Con un jugador se edita ese; con 'nuevo', se da de alta.
   const [jugadorEnEdicion, setJugadorEnEdicion] = useState<Participante | 'nuevo' | null>(null);
@@ -50,19 +54,27 @@ export function SheetDeArmado({ visible, onCerrar }: Props) {
     setErrorAlEmpezar(false);
   }, [visible, reiniciar]);
 
-  // Paso 6.2. Hasta que exista la pantalla de la partida (7.1) se vuelve al Home,
-  // que ya la muestra como «Continuar partida» (registro, cambio 69).
+  // Paso 6.2: crea la partida, cierra el sheet y la abre (7.1).
   const empezar = async () => {
     setEmpezando(true);
     setErrorAlEmpezar(false);
+    let partida: Partida;
     try {
-      await armado.empezar();
+      partida = await armado.empezar();
     } catch {
       setErrorAlEmpezar(true);
       setEmpezando(false);
       return;
     }
     onCerrar();
+    router.push({ pathname: '/partida/[id]', params: { id: partida.id } });
+  };
+
+  // Tocar otra cosa suelta el campo del nombre: si no, el teclado queda abierto, y
+  // al cerrarse el popup de participante iOS le devuelve el foco y vuelve a subir.
+  const abrirJugador = (jugador: Participante | 'nuevo') => {
+    Keyboard.dismiss();
+    setJugadorEnEdicion(jugador);
   };
 
   const editado = jugadorEnEdicion === 'nuevo' || jugadorEnEdicion === null ? undefined : jugadorEnEdicion;
@@ -80,11 +92,24 @@ export function SheetDeArmado({ visible, onCerrar }: Props) {
           <Boton
             titulo={es.nuevaPartida.empezar}
             deshabilitado={!armado.puedeEmpezar || empezando}
-            onPress={() => void empezar()}
+            onPress={() => {
+              Keyboard.dismiss();
+              void empezar();
+            }}
           />
         </View>
       }
     >
+      {/* Obligatorio: sin nombre, EMPEZAR no se habilita (registro, cambio 71). */}
+      <CampoTexto
+        etiqueta={es.nuevaPartida.nombre}
+        valor={armado.nombre}
+        onCambiar={armado.cambiarNombre}
+        placeholder={es.nuevaPartida.nombreEjemplo}
+        maxLength={LARGO_MAXIMO_NOMBRE_PARTIDA}
+        returnKeyType="done"
+      />
+
       <View style={styles.seccion}>
         <Etiqueta texto={es.nuevaPartida.tipoDeJuego} />
         <Grilla>
@@ -92,7 +117,10 @@ export function SheetDeArmado({ visible, onCerrar }: Props) {
             <Card
               key={plantilla.id}
               estado={plantilla.id === armado.plantillaId ? 'seleccionada' : 'normal'}
-              onPress={() => armado.elegirPlantilla(plantilla.id)}
+              onPress={() => {
+                Keyboard.dismiss();
+                armado.elegirPlantilla(plantilla.id);
+              }}
               etiqueta={plantilla.nombre}
               style={styles.plantilla}
             >
@@ -116,7 +144,7 @@ export function SheetDeArmado({ visible, onCerrar }: Props) {
                 key={jugador.id}
                 accessibilityRole="button"
                 accessibilityLabel={`${es.participante.editarTitulo}: ${jugador.nombre}`}
-                onPress={() => setJugadorEnEdicion(jugador)}
+                onPress={() => abrirJugador(jugador)}
                 style={({ pressed }) => [styles.jugador, pressed && styles.presionado]}
               >
                 <Avatar
@@ -137,7 +165,7 @@ export function SheetDeArmado({ visible, onCerrar }: Props) {
                     key="agregar"
                     accessibilityRole="button"
                     accessibilityLabel={es.participante.agregarTitulo}
-                    onPress={() => setJugadorEnEdicion('nuevo')}
+                    onPress={() => abrirJugador('nuevo')}
                     style={({ pressed }) => [styles.jugador, pressed && styles.presionado]}
                   >
                     <View style={styles.agregar}>

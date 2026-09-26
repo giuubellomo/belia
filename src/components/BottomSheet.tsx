@@ -74,7 +74,10 @@ export function BottomSheet({ visible, onCerrar, titulo, children, pie, etiqueta
         style={styles.abajo}
         pointerEvents="box-none"
       >
-        <Animated.View style={[styles.hoja, { maxHeight: height * 0.9, transform: [{ translateY }] }]}>
+        {/* El tope es un porcentaje del espacio que deja el teclado, no de la pantalla:
+            con el teclado abierto el sheet se achica y el contenido pasa a scrollear,
+            en lugar de salirse por arriba con el encabezado y el primer campo. */}
+        <Animated.View style={[styles.hoja, { transform: [{ translateY }] }]}>
           <View style={styles.manija} />
 
           <View style={styles.encabezado}>
@@ -113,6 +116,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: radios.xl,
     borderTopRightRadius: radios.xl,
     paddingTop: espacios.xs,
+    maxHeight: '90%',
   },
   manija: {
     alignSelf: 'center',
@@ -131,7 +135,8 @@ const styles = StyleSheet.create({
     paddingBottom: espacios.sm,
   },
   titulo: { ...tipografia.subtitulo, color: colores.tinta, flexShrink: 1 },
-  contenido: { flexGrow: 0 },
+  // Se achica cuando el sheet llega a su tope: el que scrollea es el contenido.
+  contenido: { flexGrow: 0, flexShrink: 1 },
   contenidoInterno: { paddingHorizontal: espacios.xl, paddingBottom: espacios.md, gap: espacios.md },
   pie: {
     borderTopWidth: 1,

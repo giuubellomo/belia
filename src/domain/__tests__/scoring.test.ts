@@ -1,4 +1,4 @@
-import { puntajeDeRonda, totalDeParticipante, totalesDePartida } from '../scoring';
+import { mejoresDeRonda, puntajeDeRonda, totalDeParticipante, totalesDePartida } from '../scoring';
 import type {
   EntradaRonda,
   ModoPuntos,
@@ -143,5 +143,35 @@ describe('totalesDePartida', () => {
   it('respeta el orden de participantes de la partida', () => {
     const juego = partida('suma', [participante('c'), participante('a')], []);
     expect(totalesDePartida(juego).map((t) => t.participanteId)).toEqual(['c', 'a']);
+  });
+});
+
+// --- mejoresDeRonda ------------------------------------------------------
+
+describe('mejoresDeRonda', () => {
+  function ronda(entradas: EntradaRonda[]): RondaJugada {
+    return { numero: 1, estado: 'cerrada', entradas };
+  }
+
+  it('con criterio mayor gana el puntaje mas alto', () => {
+    const simple = { ...plantilla('suma'), criterioVictoria: 'mayor' as const };
+    const r = ronda([entrada('a', 10), entrada('b', 30), entrada('c', 5)]);
+    expect(mejoresDeRonda(r, simple)).toEqual({ participanteIds: ['b'], puntaje: 30 });
+  });
+
+  it('con criterio menor gana el mas bajo, con el signo de modo y las marcas', () => {
+    // resta: a = -10 - 20 = -30, b = -5
+    const r = ronda([entrada('a', 10, { corto: -20 }), entrada('b', 5)]);
+    expect(mejoresDeRonda(r, plantilla('resta'))).toEqual({ participanteIds: ['a'], puntaje: -30 });
+  });
+
+  it('si empatan vienen todos, en el orden de la ronda', () => {
+    const simple = { ...plantilla('suma'), criterioVictoria: 'mayor' as const };
+    const r = ronda([entrada('a', 20), entrada('b', 5), entrada('c', 20)]);
+    expect(mejoresDeRonda(r, simple)).toEqual({ participanteIds: ['a', 'c'], puntaje: 20 });
+  });
+
+  it('sin entradas devuelve null', () => {
+    expect(mejoresDeRonda(ronda([]), plantilla('suma'))).toBeNull();
   });
 });

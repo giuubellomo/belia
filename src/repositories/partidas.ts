@@ -13,6 +13,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { escribir, leer } from '@/db/client';
 import { MAXIMO_JUGADORES, MINIMO_JUGADORES } from '@/domain/participantes';
+import { nombreDePartida } from '@/domain/partidas';
 import { marcarRegla as marcarEnRonda, puedeCerrarRonda } from '@/domain/rondas';
 import type {
   AvatarTipo,
@@ -29,7 +30,7 @@ import { agrupar, ahora, nuevoId } from './comun';
 import { plantillaDesdeBase } from './plantillas';
 
 export interface DatosPartida {
-  /** Lo pone quien llama: el nombre por defecto es texto de interfaz (A-4). */
+  /** Se escribe al armar y es obligatorio (registro, cambio 71). Se guarda limpio. */
   nombre: string;
   plantillaId: string;
   /**
@@ -111,6 +112,9 @@ export function crear(datos: DatosPartida): Promise<Partida> {
       throw new Error('Ya hay una partida en curso: hay que terminarla antes de crear otra (A-5)');
     }
 
+    const nombre = nombreDePartida(datos.nombre);
+    if (nombre === null) throw new Error('La partida necesita un nombre');
+
     const { participantes } = datos;
     if (new Set(participantes.map((p) => p.id)).size !== participantes.length) {
       throw new Error('Un participante no puede estar dos veces en la misma partida');
@@ -135,7 +139,7 @@ export function crear(datos: DatosPartida): Promise<Partida> {
     await db.runAsync(
       `INSERT INTO partida (id, nombre, plantilla_snapshot, estado, iniciada_en, finalizada_en)
        VALUES (?, ?, ?, 'en_curso', ?, NULL)`,
-      [id, datos.nombre, JSON.stringify(plantilla), ahora()],
+      [id, nombre, JSON.stringify(plantilla), ahora()],
     );
 
     for (const [orden, participante] of participantes.entries()) {

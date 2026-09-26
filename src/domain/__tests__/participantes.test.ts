@@ -40,17 +40,22 @@ describe('normalizarNombre', () => {
 
 describe('puedeEmpezar (RF-604, RF-605)', () => {
   test('sin plantilla no se empieza, aunque haya jugadores', () => {
-    expect(puedeEmpezar(false, 4)).toBe(false);
+    expect(puedeEmpezar('Viernes', false, 4)).toBe(false);
   });
 
   test('hacen falta al menos dos jugadores', () => {
-    expect(puedeEmpezar(true, 0)).toBe(false);
-    expect(puedeEmpezar(true, 1)).toBe(false);
-    expect(puedeEmpezar(true, 2)).toBe(true);
+    expect(puedeEmpezar('Viernes', true, 0)).toBe(false);
+    expect(puedeEmpezar('Viernes', true, 1)).toBe(false);
+    expect(puedeEmpezar('Viernes', true, 2)).toBe(true);
   });
 
   test('el tope es ocho', () => {
-    expect(puedeEmpezar(true, 8)).toBe(true);
-    expect(puedeEmpezar(true, 9)).toBe(false);
+    expect(puedeEmpezar('Viernes', true, 8)).toBe(true);
+    expect(puedeEmpezar('Viernes', true, 9)).toBe(false);
+  });
+
+  test('sin nombre no se empieza: vacio o solo espacios', () => {
+    expect(puedeEmpezar('', true, 4)).toBe(false);
+    expect(puedeEmpezar('   ', true, 4)).toBe(false);
   });
 });

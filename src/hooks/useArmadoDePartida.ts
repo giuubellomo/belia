@@ -1,8 +1,8 @@
 import { useCallback, useState } from 'react';
 
 import { MAXIMO_JUGADORES, puedeEmpezar } from '@/domain/participantes';
+import { nombreDePartida } from '@/domain/partidas';
 import type { Partida, Participante } from '@/domain/types';
-import { es } from '@/i18n/es';
 import { nuevoId } from '@/repositories/comun';
 import * as partidas from '@/repositories/partidas';
 
@@ -12,6 +12,9 @@ import { mutar } from './useConsulta';
 type DatosJugador = Omit<Participante, 'id'>;
 
 export interface ArmadoDePartida {
+  /** Tal como se escribe; se limpia al empezar. Obligatorio (cambio 71). */
+  nombre: string;
+  cambiarNombre: (texto: string) => void;
   plantillaId: string | null;
   /** En el orden en que se agregaron: es el orden de la partida. */
   jugadores: Participante[];
@@ -20,7 +23,7 @@ export interface ArmadoDePartida {
   agregarJugador: (datos: DatosJugador) => void;
   editarJugador: (id: string, datos: DatosJugador) => void;
   sacarJugador: (id: string) => void;
-  /** Vuelve a cero: sin plantilla y sin jugadores. Es la misma funcion en cada render. */
+  /** Vuelve a cero: sin nombre, sin plantilla y sin jugadores. Es la misma funcion en cada render. */
   reiniciar: () => void;
   hayLugar: boolean;
   puedeEmpezar: boolean;
@@ -39,16 +42,20 @@ export interface ArmadoDePartida {
  * va a llevar en la partida (RNF-9).
  */
 export function useArmadoDePartida(): ArmadoDePartida {
+  const [nombre, setNombre] = useState('');
   const [plantillaId, setPlantillaId] = useState<string | null>(null);
   const [jugadores, setJugadores] = useState<Participante[]>([]);
 
   // Estable: el sheet la llama en un efecto, cada vez que se abre.
   const reiniciar = useCallback(() => {
+    setNombre('');
     setPlantillaId(null);
     setJugadores([]);
   }, []);
 
   return {
+    nombre,
+    cambiarNombre: setNombre,
     plantillaId,
     jugadores,
     elegirPlantilla: setPlantillaId,
@@ -61,13 +68,14 @@ export function useArmadoDePartida(): ArmadoDePartida {
     sacarJugador: (id) => setJugadores((previos) => previos.filter((jugador) => jugador.id !== id)),
     reiniciar,
     hayLugar: jugadores.length < MAXIMO_JUGADORES,
-    puedeEmpezar: puedeEmpezar(plantillaId !== null, jugadores.length),
+    puedeEmpezar: puedeEmpezar(nombre, plantillaId !== null, jugadores.length),
     empezar: () => {
+      const limpio = nombreDePartida(nombre);
+      if (limpio === null) return Promise.reject(new Error('La partida no tiene nombre'));
       if (plantillaId === null) return Promise.reject(new Error('No hay plantilla elegida'));
       return mutar(() =>
         partidas.crear({
-          // A-4: «Partida del 25/9». El mockup no tiene donde editarlo al armar.
-          nombre: es.nuevaPartida.nombrePorDefecto(new Date()),
+          nombre: limpio,
           plantillaId,
           participantes: jugadores,
         }),
