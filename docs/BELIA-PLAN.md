@@ -984,7 +984,7 @@ escribiendo una suma dentro de un componente, está mal.
 
 # Fase 8 — Finalizar
 
-- [ ] **8.1 — Terminar la partida** (RF-710 → confirmación, RF-711, RF-805)
+- [x] **8.1 — Terminar la partida** (RF-710 → confirmación, RF-711, RF-805)
 
   `TERMINAR` pide confirmación y avisa si la ronda en curso quedó incompleta. Al confirmar,
   la partida pasa a `finalizada` y deja de aparecer en el home.
@@ -992,6 +992,14 @@ escribiendo una suma dentro de un componente, está mal.
   **Consecuencia asumida:** sin historial (es fase 2), el podio se ve una sola vez. Si la
   usuaria cierra la app estando en el podio, no hay forma de volver a ese resultado. La
   partida finalizada queda en la base igual, así que el historial de fase 2 la va a encontrar.
+
+  **Cómo quedó:** popup de confirmación en la pantalla de partida, igual al del Home (A-5).
+  «La ronda en curso quedó incompleta.» sale de `rondaEnCursoIncompleta`, nueva en
+  `rondas.ts` (con tests): la ronda en curso no se podría cerrar. Al confirmar vuelve al Home
+  hasta que exista el podio (8.2).
+
+  Verificado en el teléfono: el aviso, Cancelar, y al terminar la partida deja de estar en
+  el Home.
 
 - [ ] **8.2 — Podio** (RF-801 a RF-804)
 

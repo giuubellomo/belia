@@ -6,8 +6,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Boton } from '@/components/Boton';
 import { BotonIcono } from '@/components/BotonIcono';
+import { Popup } from '@/components/Popup';
 import { PopupDeCarga } from '@/components/PopupDeCarga';
 import { TarjetaDeRonda } from '@/components/TarjetaDeRonda';
+import { rondaEnCursoIncompleta } from '@/domain/rondas';
 import type { Partida, RondaJugada } from '@/domain/types';
 import { usePartida } from '@/hooks/usePartida';
 import { es } from '@/i18n/es';
@@ -21,7 +23,8 @@ import { colores, espacios, tipografia } from '@/theme/tokens';
  * TERMINAR PARTIDA fijo abajo. Todo sale de la base via `usePartida`: salir y
  * volver deja todo igual. Tocar a un participante abre el popup de carga (7.4)
  * y SIGUIENTE cierra la ronda en juego (7.5). Una ronda cerrada se toca para
- * expandirla y corregirla con el mismo popup (7.6).
+ * expandirla y corregirla con el mismo popup (7.6). TERMINAR pide confirmacion
+ * y finaliza la partida (8.1).
  */
 export default function PantallaDePartida() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -33,11 +36,25 @@ export default function PantallaDePartida() {
   const [cargaAbierta, setCargaAbierta] = useState(false);
   // La ronda cerrada que se esta corrigiendo (7.6): una a la vez.
   const [expandida, setExpandida] = useState<number | null>(null);
+  const [confirmando, setConfirmando] = useState(false);
+  const [errorAlTerminar, setErrorAlTerminar] = useState(false);
 
   // RF-713: en la mesa nadie toca el telefono por un rato y la pantalla no se apaga.
   useKeepAwake();
 
   if (partida === null) return null;
+
+  const terminar = async () => {
+    try {
+      await mutar(() => partidas.finalizar(partida.id));
+    } catch {
+      setErrorAlTerminar(true);
+      return;
+    }
+    setConfirmando(false);
+    // RF-711: la partida ya no aparece en el Home. El podio es el paso 8.2.
+    router.back();
+  };
 
   return (
     <SafeAreaView style={styles.pantalla}>
@@ -66,9 +83,34 @@ export default function PantallaDePartida() {
       </ScrollView>
 
       <View style={styles.pie}>
-        {/* Confirmar y terminar es el paso 8.1. */}
-        <Boton titulo={es.partida.terminarPartida} variante="secundario" onPress={() => {}} />
+        <Boton
+          titulo={es.partida.terminarPartida}
+          variante="secundario"
+          onPress={() => {
+            setErrorAlTerminar(false);
+            setConfirmando(true);
+          }}
+        />
       </View>
+
+      {/* RF-710: confirmacion, con aviso si la ronda en curso no se podia cerrar. */}
+      <Popup
+        visible={confirmando}
+        onCerrar={() => setConfirmando(false)}
+        etiquetaCerrar={es.comun.cerrar}
+        titulo={es.finalizar.confirmarTitulo}
+      >
+        {rondaEnCursoIncompleta(partida) && <Text style={styles.textoPopup}>{es.finalizar.rondaIncompleta}</Text>}
+        {errorAlTerminar && <Text style={styles.textoPopup}>{es.comun.errorGuardar}</Text>}
+        <View style={styles.botonesPopup}>
+          <View style={styles.boton}>
+            <Boton titulo={es.comun.cancelar} variante="secundario" onPress={() => setConfirmando(false)} />
+          </View>
+          <View style={styles.boton}>
+            <Boton titulo={es.comun.terminar} onPress={() => void terminar()} />
+          </View>
+        </View>
+      </Popup>
 
       <PopupDeCarga
         visible={cargaAbierta}
@@ -109,6 +151,9 @@ const styles = StyleSheet.create({
   },
   titulo: { ...tipografia.subtitulo, color: colores.tinta, flexShrink: 1 },
   rondas: { padding: espacios.xl, gap: espacios.md },
+  textoPopup: { ...tipografia.cuerpo, color: colores.tinta },
+  botonesPopup: { flexDirection: 'row', gap: espacios.sm },
+  boton: { flex: 1 },
   pie: {
     paddingHorizontal: espacios.xl,
     paddingTop: espacios.md,

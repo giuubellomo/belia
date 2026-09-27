@@ -11,6 +11,7 @@ import {
   REGLA_CORTO,
   reglasDeLaRonda,
   reglasSinAsignar,
+  rondaEnCursoIncompleta,
   todosCargaron,
 } from '../rondas';
 import type {
@@ -463,5 +464,31 @@ describe('cargoPuntaje con la Cortó de Karioka', () => {
   it('aplicarCarga deja en 0 al que marco la Cortó', () => {
     const r = aplicarCarga(ronda(1, [entrada('a', 20)]), karioka, 'a', 20, [REGLA_CORTO]);
     expect(r.entradas).toEqual([entrada('a', 0, { [REGLA_CORTO]: -10 })]);
+  });
+});
+
+describe('rondaEnCursoIncompleta', () => {
+  function partida(rondas: RondaJugada[]): Partida {
+    return {
+      id: 'g1',
+      nombre: 'x',
+      estado: 'en_curso',
+      plantilla: plantilla(),
+      participantes: [participante('a'), participante('b')],
+      rondas,
+    };
+  }
+  const completa = [entrada('a', 5, { bajo: -10 }), entrada('b', 3, { corto: -10 })];
+
+  it('la ronda en curso con puntajes o reglas faltantes esta incompleta', () => {
+    expect(rondaEnCursoIncompleta(partida([ronda(1, [entrada('a', 5), entrada('b', 3)])]))).toBe(true);
+  });
+
+  it('la ronda en curso que se podria cerrar no', () => {
+    expect(rondaEnCursoIncompleta(partida([ronda(1, completa)]))).toBe(false);
+  });
+
+  it('sin ronda en curso no hay nada incompleto', () => {
+    expect(rondaEnCursoIncompleta(partida([{ numero: 1, estado: 'cerrada', entradas: completa }]))).toBe(false);
   });
 });

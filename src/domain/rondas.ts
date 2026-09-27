@@ -201,6 +201,17 @@ export function haySiguienteRonda(partida: Partida, numeroRonda: number): boolea
 }
 
 /**
+ * RF-710: al terminar la partida, ¿la ronda en curso quedo sin poder cerrarse?
+ * Es el aviso de la confirmacion (paso 8.1). Sin ronda en curso -- se cerro la
+ * ultima -- no hay nada incompleto.
+ */
+export function rondaEnCursoIncompleta(partida: Partida): boolean {
+  const enCurso = partida.rondas.find((ronda) => ronda.estado === 'en_curso');
+  if (enCurso === undefined) return false;
+  return !puedeCerrarRonda(enCurso, partida.plantilla, partida.participantes).puede;
+}
+
+/**
  * El numero de la ronda que se esta jugando (RF-102, cambio 3 del registro: la
  * ronda en curso se deriva del estado, no hay campo `ronda_actual`).
  *
