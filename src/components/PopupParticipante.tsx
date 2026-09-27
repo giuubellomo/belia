@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text } from 'react-native';
 
 import { es } from '@/i18n/es';
-import { AREA_TOCABLE_MINIMA, colores, tipografia } from '@/theme/tokens';
 
+import { Eliminar } from './Eliminar';
 import { FormularioParticipante, type DatosFormularioParticipante } from './FormularioParticipante';
 import { Popup } from './Popup';
 
@@ -58,15 +57,8 @@ export function PopupParticipante({ visible, onCerrar, participante, nombresOcup
 
       {/* Como en los sheets de regla y de ronda: al pie, en texto (cambio 59). */}
       {onEliminar !== undefined && (
-        <Pressable accessibilityRole="button" onPress={onEliminar} style={styles.eliminar}>
-          <Text style={styles.eliminarTexto}>{es.comun.eliminar}</Text>
-        </Pressable>
+        <Eliminar onEliminar={onEliminar} />
       )}
     </Popup>
   );
 }
-
-const styles = StyleSheet.create({
-  eliminar: { minHeight: AREA_TOCABLE_MINIMA, alignItems: 'center', justifyContent: 'center' },
-  eliminarTexto: { ...tipografia.secundario, fontWeight: '700', color: colores.tinta },
-});

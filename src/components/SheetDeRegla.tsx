@@ -1,16 +1,17 @@
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import type { AlcanceRegla, Regla } from '@/domain/types';
 import type { DatosRegla } from '@/hooks/useBorradorDePlantilla';
 import { conSigno, es } from '@/i18n/es';
 import { iconos } from '@/theme/iconos';
-import { AREA_TOCABLE_MINIMA, colores, espacios, tipografia } from '@/theme/tokens';
+import { colores, espacios, tipografia } from '@/theme/tokens';
 
 import { BottomSheet } from './BottomSheet';
 import { Boton } from './Boton';
 import { CampoTexto } from './CampoTexto';
 import { Card } from './Card';
+import { Eliminar } from './Eliminar';
 import { Etiqueta } from './Etiqueta';
 import { Segmented } from './Segmented';
 import { Stepper } from './Stepper';
@@ -170,9 +171,7 @@ export function SheetDeRegla({ visible, onCerrar, regla, onGuardar, onBorrar, de
       {/* Al editar: saca la regla del borrador. Como todo lo del editor, se
           deshace saliendo sin guardar la plantilla. */}
       {onBorrar !== undefined && (
-        <Pressable accessibilityRole="button" onPress={onBorrar} style={styles.eliminar}>
-          <Text style={styles.eliminarTexto}>{es.comun.eliminar}</Text>
-        </Pressable>
+        <Eliminar pregunta={es.regla.confirmarEliminar(regla?.titulo ?? '')} onEliminar={onBorrar} />
       )}
     </BottomSheet>
   );
@@ -203,6 +202,4 @@ const styles = StyleSheet.create({
   ayuda: { ...tipografia.secundario, color: colores.grisMedio },
   opcionTitulo: { ...tipografia.cuerpoFuerte, color: colores.tinta },
   opcionAyuda: { ...tipografia.secundario, color: colores.grisMedio },
-  eliminar: { minHeight: AREA_TOCABLE_MINIMA, alignItems: 'center', justifyContent: 'center' },
-  eliminarTexto: { ...tipografia.secundario, fontWeight: '700', color: colores.tinta },
 });

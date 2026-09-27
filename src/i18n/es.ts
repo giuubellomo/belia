@@ -143,6 +143,8 @@ export const es = {
   regla: {
     editar: 'Editar regla',
     nueva: 'Nueva regla',
+    /** RNF-6, cambio 83. */
+    confirmarEliminar: (titulo: string) => `¿Eliminar «${titulo}»?`,
     titulo: 'Título',
     descripcion: 'Descripción (opcional)',
     puntaje: 'Puntaje',
@@ -188,6 +190,8 @@ export const es = {
     ayudaAjuste: (n: number) =>
       `El puntaje que cambies acá vale solo para la Ronda ${n}. En las demás sigue el de la plantilla.`,
     guardar: 'GUARDAR RONDA',
+    /** RNF-6, cambio 83. */
+    confirmarEliminar: (n: number) => `¿Eliminar la Ronda ${n}?`,
   },
 
   partida: {

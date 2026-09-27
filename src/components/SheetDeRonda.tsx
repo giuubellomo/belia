@@ -1,17 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import type { Regla, RondaDefinida } from '@/domain/types';
 import type { DatosRegla, DatosRonda } from '@/hooks/useBorradorDePlantilla';
 import { conSigno, es } from '@/i18n/es';
 import { iconos } from '@/theme/iconos';
-import { AREA_TOCABLE_MINIMA, colores, espacios, radios, tipografia } from '@/theme/tokens';
+import { colores, espacios, radios, tipografia } from '@/theme/tokens';
 
 import { BottomSheet } from './BottomSheet';
 import { Boton } from './Boton';
 import { CampoTexto } from './CampoTexto';
 import { Card } from './Card';
 import { Chip } from './Chip';
+import { Eliminar } from './Eliminar';
 import { Etiqueta } from './Etiqueta';
 import { SheetDeRegla } from './SheetDeRegla';
 import { Stepper } from './Stepper';
@@ -153,9 +154,7 @@ export function SheetDeRonda({
       {/* Al editar: saca la ronda del borrador. Como en el sheet de regla, va al
           pie y no en el encabezado, que es de la ✕ (cambio 59). */}
       {onBorrar !== undefined && (
-        <Pressable accessibilityRole="button" onPress={onBorrar} style={styles.eliminar}>
-          <Text style={styles.eliminarTexto}>{es.comun.eliminar}</Text>
-        </Pressable>
+        <Eliminar pregunta={es.ronda.confirmarEliminar(numero)} onEliminar={onBorrar} />
       )}
 
       {/* Va adentro del sheet de la ronda y no al lado: en iOS un Modal solo se
@@ -248,6 +247,4 @@ const styles = StyleSheet.create({
   alcanceTexto: { ...tipografia.chico, color: colores.grisOscuro, flexShrink: 1 },
   agregar: { ...tipografia.cuerpoFuerte, color: colores.grisMedio, textAlign: 'center', paddingVertical: espacios.xs },
   ayuda: { ...tipografia.secundario, color: colores.grisMedio },
-  eliminar: { minHeight: AREA_TOCABLE_MINIMA, alignItems: 'center', justifyContent: 'center' },
-  eliminarTexto: { ...tipografia.secundario, fontWeight: '700', color: colores.tinta },
 });

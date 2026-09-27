@@ -1036,10 +1036,17 @@ escribiendo una suma dentro de un componente, está mal.
 
   Verificado en el teléfono.
 
-- [ ] **9.2 — Confirmaciones y estados vacíos** (RNF-6)
+- [x] **9.2 — Confirmaciones y estados vacíos** (RNF-6)
 
   Revisá que borrar plantilla, borrar participante y terminar partida pidan confirmación.
   Revisá que ninguna lista vacía quede en blanco sin explicación.
+
+  **Cómo quedó** (ver registro, cambio 83): borrar plantilla, terminar partida y salir del
+  editor con cambios ya confirmaban, y ninguna lista queda en blanco. Se sumó confirmación a
+  eliminar una regla y una ronda en el editor, en el mismo lugar del «Eliminar»
+  (`Eliminar.tsx`). Un jugador del armado se saca sin preguntar.
+
+  Verificado en el teléfono.
 
 - [ ] **9.3 — Repaso de no funcionales**
 
@@ -1266,3 +1273,4 @@ Durante el paso 7.1 (estructura de la pantalla):
 | 80 | El total al lado de cada casilla es el acumulado **hasta esa ronda** (`totalHastaRonda`, nueva en `scoring.ts` con tests): en la ronda en juego da el total de la partida, y en una cerrada expandida, el total al terminarla. | Decisión de la usuaria: como en una planilla, el total de la partida en la ronda 1 confunde. |
 | 81 | `app/partida/[id].tsx` pasó a `app/partida/[id]/index.tsx`. Terminar la partida abre el podio con `router.replace`. En el podio, la altura y el color del escalón dependen de la posición y no del lugar en pantalla. | El podio que pide el plan (`app/partida/[id]/final.tsx`) necesita la carpeta. Con replace, la partida finalizada no queda en el historial. Así un empate en el primer lugar muestra dos escalones iguales (RF-804). |
 | 82 | **Configuración sin perfil y sin bienvenida.** El engranaje abre una pantalla con la versión de la app y «DeBello» abajo; no hay perfil que editar ni acceso a plantillas (ya está en el pie del Home). Se fueron `app/bienvenida.tsx`, `useDueno`, `es.bienvenida` y el `Stack.Protected` de `_layout`. El tema claro/oscuro sigue en fase 2. La fila del dueño queda en la base, sin uso. | Decisión de la usuaria: cierra el pendiente del cambio 66. El tema se consideró para el MVP y se dejó para fase 2 porque toca todas las pantallas. |
+| 83 | Eliminar una regla o una ronda en el editor pide confirmación: el «Eliminar» se reemplaza, en el mismo lugar, por la pregunta con Cancelar y Eliminar (`Eliminar.tsx`, que reúne los tres «Eliminar» al pie). **Un jugador del armado se saca sin preguntar**, aunque el RNF-6 nombre «borrar participante». | Decisión de la usuaria. Desde el cambio 65 el jugador no está guardado y se recupera volviéndolo a agregar; se probó con pregunta y no le gustó. En el lugar y no en otro popup porque en iOS un Modal no se abre encima de otro. |
