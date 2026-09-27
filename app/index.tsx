@@ -77,8 +77,7 @@ export default function Home() {
       </View>
 
       <View style={styles.pie}>
-        {/* Configuracion es el paso 9.1: todavia no existe. */}
-        <AccionDePie icono={iconos.engranaje} texto={es.home.configuracion} onPress={() => {}} />
+        <AccionDePie icono={iconos.engranaje} texto={es.home.configuracion} onPress={() => router.push('/config')} />
         <AccionDePie
           icono={iconos.plantillaNueva}
           texto={es.home.plantillas}

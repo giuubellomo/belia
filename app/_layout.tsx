@@ -4,7 +4,6 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { sembrar } from '@/db/seed';
 import { es } from '@/i18n/es';
-import { useDueno } from '@/hooks/useDueno';
 
 /**
  * Antes de montar cualquier pantalla se siembran las plantillas predefinidas
@@ -30,37 +29,21 @@ export default function RootLayout() {
 }
 
 /**
- * Paso 4.1 (RF-205): sin dueño del dispositivo solo existe la bienvenida; con
- * dueño, el resto de la app. Cuando se crea el dueño, el guard cambia y el router
- * saca la bienvenida del historial: no hay forma de volver a ella.
+ * Sin bienvenida desde el paso 9.1 (cambio 82): la app abre directo en el Home.
  */
 function Navegacion() {
-  const { dueno, cargando, error } = useDueno();
-
-  if (error !== null) return <PantallaError mensaje={String(error)} />;
-  if (cargando) return null;
-
-  const hayDueno = dueno !== null;
-
   return (
     <Stack>
-      <Stack.Protected guard={!hayDueno}>
-        <Stack.Screen name="bienvenida" options={{ headerShown: false }} />
-      </Stack.Protected>
-      <Stack.Protected guard={hayDueno}>
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="plantillas/index"
-          options={{ title: es.plantillas.titulo, headerBackTitle: es.comun.volver }}
-        />
-        {/* El editor dibuja su propio encabezado (mockup 3) y confirma antes de salir
-            con cambios sin guardar: sin gesto de arrastrar, la ‹ es la unica salida. */}
-        <Stack.Screen name="plantillas/[id]" options={{ headerShown: false, gestureEnabled: false }} />
-        {/* La partida dibuja su propio encabezado (mockup 4). */}
-        <Stack.Screen name="partida/[id]/index" options={{ headerShown: false }} />
-        {/* El podio (8.2): se llega con replace desde la partida, asi que atras es el Home. */}
-        <Stack.Screen name="partida/[id]/final" options={{ headerShown: false }} />
-      </Stack.Protected>
+      <Stack.Screen name="index" options={{ headerShown: false }} />
+      <Stack.Screen name="plantillas/index" options={{ title: es.plantillas.titulo, headerBackTitle: es.comun.volver }} />
+      {/* El editor dibuja su propio encabezado (mockup 3) y confirma antes de salir
+          con cambios sin guardar: sin gesto de arrastrar, la ‹ es la unica salida. */}
+      <Stack.Screen name="plantillas/[id]" options={{ headerShown: false, gestureEnabled: false }} />
+      {/* La partida dibuja su propio encabezado (mockup 4). */}
+      <Stack.Screen name="partida/[id]/index" options={{ headerShown: false }} />
+      {/* El podio (8.2): se llega con replace desde la partida, asi que atras es el Home. */}
+      <Stack.Screen name="partida/[id]/final" options={{ headerShown: false }} />
+      <Stack.Screen name="config/index" options={{ title: es.home.configuracion, headerBackTitle: es.comun.volver }} />
     </Stack>
   );
 }

@@ -20,14 +20,14 @@ interface Props {
   textoConfirmar: string;
   /** Recibe el nombre ya normalizado. Si tira error, el formulario lo muestra y sigue abierto. */
   onConfirmar: (datos: DatosFormularioParticipante) => Promise<void>;
-  /** Sin esto no hay boton Cancelar: en la bienvenida no se puede salir sin completar. */
+  /** Sin esto no hay boton Cancelar. */
   onCancelar?: () => void;
   inicial?: DatosFormularioParticipante;
 }
 
 /**
  * Nombre y avatar de un participante. Es el contenido del popup «Agregar
- * participante» del mockup, y la bienvenida (4.1) lo usa igual.
+ * participante» del mockup.
  */
 export function FormularioParticipante({ nombresOcupados, textoConfirmar, onConfirmar, onCancelar, inicial }: Props) {
   const [nombre, setNombre] = useState(inicial?.nombre ?? '');

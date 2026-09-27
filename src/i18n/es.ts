@@ -35,12 +35,6 @@ export const es = {
     errorGuardar: 'No se pudo guardar. Probá de nuevo.',
   },
 
-  bienvenida: {
-    titulo: 'Antes de empezar',
-    texto: 'Contanos cómo te llamás y elegí tu avatar. En las partidas vas a aparecer como «Tú».',
-    continuar: 'CONTINUAR',
-  },
-
   home: {
     titulo: 'BELIA',
     subtitulo: 'Anotador de partidas',
@@ -227,6 +221,12 @@ export const es = {
     cortoSinPuntaje: 'El que corta no carga puntaje',
     // Solo para el lector de pantalla
     escribirPuntaje: 'Escribir el puntaje',
+  },
+
+  /** Configuracion (paso 9.1, cambio 82). El tema claro/oscuro llega en fase 2. */
+  config: {
+    version: (version: string) => `BELIA · versión ${version}`,
+    empresa: 'DeBello',
   },
 
   finalizar: {

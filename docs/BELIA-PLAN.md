@@ -696,6 +696,7 @@ si más adelante entra color, entra por los tokens y en un solo lugar.
 
   **Checkpoint:** primera corrida pide los datos; la segunda va directo al home.
 
+  **Resuelto en el 9.1 (cambio 82): se sacó la bienvenida.** Lo que sigue es lo que decía el pendiente del cambio 66.
   **Pendiente (cambio 66): sacar la bienvenida.** Desde que los jugadores son de la partida
   y el dueño no aparece en el armado, pedirle nombre y avatar no sirve para nada, y su texto
   («En las partidas vas a aparecer como "Tú"») ya no es cierto. La usuaria prefiere sacarla.
@@ -1022,11 +1023,18 @@ escribiendo una suma dentro de un componente, está mal.
 
 # Fase 9 — Cierre del MVP
 
-- [ ] **9.1 — Configuración** (RF-901 a RF-903)
+- [x] **9.1 — Configuración** (RF-901 a RF-903)
 
   Perfil del dueño, administración de participantes y acceso a plantillas.
   **Desde el cambio 65 no hay participantes guardados que administrar:** queda el perfil
   del dueño y el acceso a plantillas.
+
+  **Cómo quedó** (ver registro, cambio 82): sin perfil y sin bienvenida. El engranaje abre
+  `app/config/index.tsx`, con «BELIA · versión …» (de `app.json`, vía `expo-constants`) y
+  «DeBello» abajo. El tema claro/oscuro va ahí cuando llegue la fase 2. Se fueron
+  `app/bienvenida.tsx`, `useDueno` y el guard de `_layout`: la app abre en el Home.
+
+  Verificado en el teléfono.
 
 - [ ] **9.2 — Confirmaciones y estados vacíos** (RNF-6)
 
@@ -1257,3 +1265,4 @@ Durante el paso 7.1 (estructura de la pantalla):
 | 79 | **La «Cortó» de Karioka**: quien la tiene queda en 0 (`aplicarCarga` lo fuerza y el popup apaga el stepper) y, en esa ronda, los demás tienen que cargar más de 0. Se reconoce por su id fijo de la semilla (`REGLA_CORTO` en `rondas.ts`): en una copia de Karioka, «Cortó» es una regla común. `cargoPuntaje` y `rondaConCorte` nuevas; `todosCargaron` y `puntajeCargado` reciben la plantilla. Un 0 de quien no cortó se ve como casilla vacía. SIGUIENTE no avisa en texto los puntajes que faltan: se fue `partida.faltanPuntajes`. | Decisión de la usuaria al probar el 7.5: así se juega la Karioka. Prefirió no sumar una opción al editor de reglas. |
 | 80 | El total al lado de cada casilla es el acumulado **hasta esa ronda** (`totalHastaRonda`, nueva en `scoring.ts` con tests): en la ronda en juego da el total de la partida, y en una cerrada expandida, el total al terminarla. | Decisión de la usuaria: como en una planilla, el total de la partida en la ronda 1 confunde. |
 | 81 | `app/partida/[id].tsx` pasó a `app/partida/[id]/index.tsx`. Terminar la partida abre el podio con `router.replace`. En el podio, la altura y el color del escalón dependen de la posición y no del lugar en pantalla. | El podio que pide el plan (`app/partida/[id]/final.tsx`) necesita la carpeta. Con replace, la partida finalizada no queda en el historial. Así un empate en el primer lugar muestra dos escalones iguales (RF-804). |
+| 82 | **Configuración sin perfil y sin bienvenida.** El engranaje abre una pantalla con la versión de la app y «DeBello» abajo; no hay perfil que editar ni acceso a plantillas (ya está en el pie del Home). Se fueron `app/bienvenida.tsx`, `useDueno`, `es.bienvenida` y el `Stack.Protected` de `_layout`. El tema claro/oscuro sigue en fase 2. La fila del dueño queda en la base, sin uso. | Decisión de la usuaria: cierra el pendiente del cambio 66. El tema se consideró para el MVP y se dejó para fase 2 porque toca todas las pantallas. |
