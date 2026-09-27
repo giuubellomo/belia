@@ -1067,11 +1067,16 @@ escribiendo una suma dentro de un componente, está mal.
   Verificado en el teléfono: RNF-2 (cerrar Expo Go en medio de una ronda no pierde lo
   guardado), RNF-7 y el cierre deslizando.
 
-- [ ] **9.4 — Partida completa de punta a punta**
+- [x] **9.4 — Partida completa de punta a punta**
 
   Armá una partida de Karioka con 4 participantes, jugá 3 rondas cargando puntajes y
   marcando reglas, corregí un puntaje viejo, terminá y mirá el podio. Sin recargar la app
   a mano en ningún momento.
+
+  **Cómo quedó:** verificado en el teléfono el 27/9/2026, sin cambios de código: armado,
+  tres rondas con «Cortó» y «Bajó primero», corrección de la ronda 1, terminar con la ronda
+  incompleta y podio. Nada necesitó recargar la app a mano. Cierra el MVP del plan; queda
+  pendiente para el build la splash y el ícono (cambio 85).
 
 ---
 
