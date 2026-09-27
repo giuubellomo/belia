@@ -888,12 +888,23 @@ escribiendo una suma dentro de un componente, está mal.
   Verificado en el teléfono: el nombre obligatorio al armar, EMPEZAR abre la partida, salir
   y volver desde el Home deja todo igual, y el teclado del sheet.
 
-- [ ] **7.2 — Ronda activa** (RF-703, RF-704)
+- [x] **7.2 — Ronda activa** (RF-703, RF-704)
 
   Objetivo, puntaje que valen las reglas, y una fila por participante con avatar, nombre y
   su puntaje de la ronda. Sin cargar, un espacio tocable claramente vacío.
 
   **Sin botones de regla en la fila** — así quedó decidido en el diseño.
+
+  **Cómo quedó** (ver registro, cambio 75): la tarjeta en juego muestra «Objetivo: …» y una
+  línea con lo que valen las reglas de alcance `todas` en esa ronda; las opcionales no se
+  nombran, como en el mockup 4. Cada fila tiene avatar, nombre y una casilla con el puntaje
+  de la ronda; sin cargar, la casilla va punteada con una raya. «Cargado» es tener puntaje
+  manual, lo mismo que pide `todosCargaron`: sale de `puntajeCargado`, nueva en
+  `scoring.ts`. La fila recibe `onTocarParticipante` pero todavía nadie se lo pasa: el popup
+  es el 7.4. SIGUIENTE es el 7.5.
+
+  Verificado en el teléfono con las casillas vacías: la llena recién se puede ver en el 7.4,
+  sin datos de prueba en la base.
 
 - [ ] **7.3 — Acumulado** (RF-710, A-6)
 
@@ -1188,3 +1199,4 @@ Durante el paso 7.1 (estructura de la pantalla):
 | 72 | Una ronda cerrada se resume como en el mockup: objetivo y las reglas de alcance `todas` con lo que valen en esa ronda. Sin objetivo ni reglas (Simple), «Mejor puntaje: Ana (+30)», con `mejoresDeRonda` nueva en `scoring.ts` (con tests): respeta `criterioVictoria`, y si empatan los nombra a todos. | Decisión de la usuaria. Quién hizo el mejor puntaje es cálculo: va al dominio, no a la tarjeta. |
 | 73 | Sin el chip «+ Modo: suma de puntos» del mockup 5. | Se probó como chip informativo y a la usuaria no le gustó. |
 | 74 | Con rondas ilimitadas se dibuja una ronda bloqueada más al final, que no existe en la base (mockup 5). La bloqueada no lleva candado. EMPEZAR ahora abre la partida: se cierra lo que dejó pendiente el cambio 69. | La siguiente ronda de Simple recién se crea al cerrar la actual (7.5). El candado tiene el mismo problema de emoji de color que el del cambio 52. |
+| 75 | `puntajeCargado(ronda, participanteId, modo)` nueva en `scoring.ts` (con tests): el puntaje de la ronda, o null si no hay puntaje manual, aunque tenga una regla marcada. La línea de reglas de la ronda en juego nombra solo las de alcance `todas`, igual que el resumen de la cerrada (cambio 72). | Qué fila se ve vacía tiene que coincidir con lo que exige cerrar la ronda (RF-707), y es lógica: va al dominio. Las opcionales no aparecen en la tarjeta del mockup 4; se ven en el popup de carga. |

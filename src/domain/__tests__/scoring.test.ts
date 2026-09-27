@@ -1,4 +1,4 @@
-import { mejoresDeRonda, puntajeDeRonda, totalDeParticipante, totalesDePartida } from '../scoring';
+import { mejoresDeRonda, puntajeCargado, puntajeDeRonda, totalDeParticipante, totalesDePartida } from '../scoring';
 import type {
   EntradaRonda,
   ModoPuntos,
@@ -173,5 +173,29 @@ describe('mejoresDeRonda', () => {
 
   it('sin entradas devuelve null', () => {
     expect(mejoresDeRonda(ronda([]), plantilla('suma'))).toBeNull();
+  });
+});
+
+describe('puntajeCargado', () => {
+  const r: RondaJugada = {
+    numero: 2,
+    estado: 'en_curso',
+    entradas: [entrada('a', 10, { corto: -20 }), entrada('b', null, { bajo: -20 })],
+  };
+
+  it('con puntaje manual devuelve el de la ronda, con el signo de modo y las marcas', () => {
+    expect(puntajeCargado(r, 'a', 'resta')).toBe(-30);
+  });
+
+  it('con una marca pero sin puntaje manual todavia no cargo', () => {
+    expect(puntajeCargado(r, 'b', 'resta')).toBeNull();
+  });
+
+  it('sin entrada todavia no cargo', () => {
+    expect(puntajeCargado(r, 'c', 'resta')).toBeNull();
+  });
+
+  it('un cero cargado es un puntaje, no un vacio', () => {
+    expect(puntajeCargado({ ...r, entradas: [entrada('a', 0)] }, 'a', 'suma')).toBe(0);
   });
 });

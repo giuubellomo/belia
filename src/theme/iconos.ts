@@ -17,6 +17,8 @@ export const iconos = {
   adelante: '›',
   abajo: '↓',
   arriba: '↑',
+  /** La casilla de puntaje vacia, en la ronda en juego (paso 7.2). */
+  raya: '—',
   engranaje: `⚙${TEXTO}`,
   /** «Agregar plantilla» en el pie del Home (paso 4.2). */
   plantillaNueva: '⊞',

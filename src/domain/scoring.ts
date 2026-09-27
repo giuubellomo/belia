@@ -21,6 +21,21 @@ export function puntajeDeRonda(entrada: EntradaRonda, modo: ModoPuntos): number 
   return manualConSigno + deMarcas;
 }
 
+/**
+ * Lo que muestra la fila de un participante en la ronda en juego (paso 7.2,
+ * RF-704): su puntaje de la ronda, o null si todavia no cargo. «Cargar» es lo
+ * mismo que pide `todosCargaron` para cerrar la ronda: tener puntaje manual.
+ */
+export function puntajeCargado(
+  ronda: RondaJugada,
+  participanteId: string,
+  modo: ModoPuntos,
+): number | null {
+  const entrada = ronda.entradas.find((e) => e.participanteId === participanteId);
+  if (entrada === undefined || entrada.puntosManuales === null) return null;
+  return puntajeDeRonda(entrada, modo);
+}
+
 /** C-2: total acumulado de un participante en toda la partida. */
 export function totalDeParticipante(partida: Partida, participanteId: string): number {
   return partida.rondas.reduce((total, ronda) => {
