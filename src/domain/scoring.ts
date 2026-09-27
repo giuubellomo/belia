@@ -47,6 +47,16 @@ export function totalDeParticipante(partida: Partida, participanteId: string): n
   }, 0);
 }
 
+/**
+ * El acumulado de un participante al terminar una ronda: esa y las anteriores.
+ * Lo que va a la derecha de cada casilla (A-6); en una ronda cerrada expandida
+ * para corregirla, el total hasta ahi (paso 7.6, cambio 80).
+ */
+export function totalHastaRonda(partida: Partida, participanteId: string, numeroRonda: number): number {
+  const hastaAhi = { ...partida, rondas: partida.rondas.filter((ronda) => ronda.numero <= numeroRonda) };
+  return totalDeParticipante(hastaAhi, participanteId);
+}
+
 /** Todos los totales de una vez, para la vista de partida y el podio. */
 export function totalesDePartida(
   partida: Partida,

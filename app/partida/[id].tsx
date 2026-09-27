@@ -20,7 +20,8 @@ import { colores, espacios, tipografia } from '@/theme/tokens';
  * que se elige al armarla y aca no se edita (registro, cambio 71), las rondas y
  * TERMINAR PARTIDA fijo abajo. Todo sale de la base via `usePartida`: salir y
  * volver deja todo igual. Tocar a un participante abre el popup de carga (7.4)
- * y SIGUIENTE cierra la ronda en juego (7.5).
+ * y SIGUIENTE cierra la ronda en juego (7.5). Una ronda cerrada se toca para
+ * expandirla y corregirla con el mismo popup (7.6).
  */
 export default function PantallaDePartida() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -30,6 +31,8 @@ export default function PantallaDePartida() {
   // no se vacie mientras se desvanece al cerrarse.
   const [carga, setCarga] = useState<{ numeroRonda: number; participanteId: string } | null>(null);
   const [cargaAbierta, setCargaAbierta] = useState(false);
+  // La ronda cerrada que se esta corrigiendo (7.6): una a la vez.
+  const [expandida, setExpandida] = useState<number | null>(null);
 
   // RF-713: en la mesa nadie toca el telefono por un rato y la pantalla no se apaga.
   useKeepAwake();
@@ -56,6 +59,8 @@ export default function PantallaDePartida() {
               setCargaAbierta(true);
             }}
             onSiguiente={() => mutar(() => partidas.cerrarRonda(partida.id, ronda.numero))}
+            expandida={expandida === ronda.numero}
+            onAlternar={() => setExpandida((actual) => (actual === ronda.numero ? null : ronda.numero))}
           />
         ))}
       </ScrollView>

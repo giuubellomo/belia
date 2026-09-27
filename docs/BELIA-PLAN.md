@@ -960,7 +960,7 @@ escribiendo una suma dentro de un componente, está mal.
   Verificado en el teléfono: Karioka pasa de la 1 a la 2 con otro objetivo, y las
   validaciones de «Cortó».
 
-- [ ] **7.6 — Corregir una ronda cerrada** (RF-709)
+- [x] **7.6 — Corregir una ronda cerrada** (RF-709)
 
   Tocar una ronda cerrada la expande y deja editar sus puntajes. Los totales se recalculan.
 
@@ -970,6 +970,15 @@ escribiendo una suma dentro de un componente, está mal.
   **esa** ronda, no para la actual (C-4).
 
   **Checkpoint:** corregir un puntaje de la ronda 1 cambia el acumulado en la ronda 3.
+
+  **Cómo quedó** (ver registro, cambio 80): tocar una ronda cerrada la expande con el mismo
+  cuerpo que la en juego (borde gris, «✓ Completada») y se corrige con el mismo popup; tocar
+  el título la colapsa, y hay una expandida a la vez. A la derecha de cada casilla va el
+  acumulado hasta esa ronda (`totalHastaRonda`). Si al corregir queda una regla sin asignar,
+  solo se avisa: la ronda no se reabre.
+
+  Verificado en el teléfono: corregir la ronda 1 cambia el acumulado en la en juego, y la
+  ronda sigue cerrada.
 
 ---
 
@@ -1229,3 +1238,4 @@ Durante el paso 7.1 (estructura de la pantalla):
 | 77 | En la ronda en juego, debajo del nombre de cada jugador van las reglas que tiene marcadas en esa ronda («Bajó primero · Cortó»), también las opcionales. | Pedido de la usuaria al probar el 7.4: ver de un vistazo quién bajó primero y quién cortó. |
 | 78 | En la última ronda de una plantilla con rondas fijas no hay SIGUIENTE: se termina con TERMINAR PARTIDA (8.1). `haySiguienteRonda` nueva en `rondas.ts` (con tests). | Decisión de la usuaria: cerrar la última ronda no abre nada, y el 8.1 ya avisa si quedó incompleta. |
 | 79 | **La «Cortó» de Karioka**: quien la tiene queda en 0 (`aplicarCarga` lo fuerza y el popup apaga el stepper) y, en esa ronda, los demás tienen que cargar más de 0. Se reconoce por su id fijo de la semilla (`REGLA_CORTO` en `rondas.ts`): en una copia de Karioka, «Cortó» es una regla común. `cargoPuntaje` y `rondaConCorte` nuevas; `todosCargaron` y `puntajeCargado` reciben la plantilla. Un 0 de quien no cortó se ve como casilla vacía. SIGUIENTE no avisa en texto los puntajes que faltan: se fue `partida.faltanPuntajes`. | Decisión de la usuaria al probar el 7.5: así se juega la Karioka. Prefirió no sumar una opción al editor de reglas. |
+| 80 | El total al lado de cada casilla es el acumulado **hasta esa ronda** (`totalHastaRonda`, nueva en `scoring.ts` con tests): en la ronda en juego da el total de la partida, y en una cerrada expandida, el total al terminarla. | Decisión de la usuaria: como en una planilla, el total de la partida en la ronda 1 confunde. |

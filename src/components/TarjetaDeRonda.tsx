@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import {
@@ -8,7 +8,7 @@ import {
   reglasDeLaRonda,
   reglasSinAsignar,
 } from '@/domain/rondas';
-import { mejoresDeRonda, puntajeCargado, totalDeParticipante } from '@/domain/scoring';
+import { mejoresDeRonda, puntajeCargado, totalHastaRonda } from '@/domain/scoring';
 import type { Participante, Partida, Plantilla, RondaJugada } from '@/domain/types';
 import { conSigno, es } from '@/i18n/es';
 import { iconos } from '@/theme/iconos';
@@ -22,8 +22,15 @@ import { Chip } from './Chip';
 interface Props {
   ronda: RondaJugada;
   partida: Partida;
-  /** Tocar la fila de un participante en la ronda en juego: abre el popup de carga (7.4). */
+  /**
+   * Tocar la fila de un participante, en la ronda en juego o en una cerrada
+   * expandida: abre el popup de carga de esa ronda (7.4, 7.6).
+   */
   onTocarParticipante?: (participanteId: string) => void;
+  /** Una ronda cerrada abierta para corregirla (7.6). */
+  expandida?: boolean;
+  /** Tocar una ronda cerrada la expande o la vuelve a colapsar. */
+  onAlternar?: () => void;
   /** SIGUIENTE: cierra la ronda en juego y abre la que sigue (7.5). */
   onSiguiente?: () => Promise<void>;
 }
@@ -35,19 +42,55 @@ interface Props {
  * de la ronda, sin botones de regla: las reglas se marcan en el popup (7.4).
  * A su derecha va el acumulado de la partida (paso 7.3, A-6). Al pie, SIGUIENTE
  * (paso 7.5, RF-706 a RF-708), salvo en la ultima ronda de rondas fijas.
+ * Una cerrada se toca para expandirla y corregirla (paso 7.6, RF-709): sigue
+ * cerrada, y la en juego sigue siendo la misma.
  */
-export function TarjetaDeRonda({ ronda, partida, onTocarParticipante, onSiguiente }: Props) {
+export function TarjetaDeRonda({
+  ronda,
+  partida,
+  onTocarParticipante,
+  onSiguiente,
+  expandida = false,
+  onAlternar,
+}: Props) {
   const titulo = es.ronda.titulo(ronda.numero);
+  const completada = <Text style={styles.completada}>{`${iconos.tilde} ${es.partida.completada}`}</Text>;
+
+  if (ronda.estado === 'cerrada' && expandida) {
+    return (
+      <Card>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ expanded: true }}
+          accessibilityLabel={`${titulo}, ${es.partida.completada}`}
+          onPress={onAlternar}
+          style={({ pressed }) => pressed && styles.presionada}
+        >
+          <Cabecera ronda={ronda} partida={partida} titulo={titulo} marca={completada} />
+        </Pressable>
+        <Filas ronda={ronda} partida={partida} onTocarParticipante={onTocarParticipante} />
+        {/* Corregir no reabre la ronda: si quedo una regla sin asignar, solo se avisa. */}
+        <View style={styles.corregida}>
+          <ReglasSinAsignar ronda={ronda} partida={partida} />
+        </View>
+      </Card>
+    );
+  }
 
   if (ronda.estado === 'cerrada') {
     const resumen = resumenDeCerrada(ronda, partida);
     return (
-      <Card estado="suave" style={styles.fila}>
+      <Card
+        estado="suave"
+        style={styles.fila}
+        onPress={onAlternar}
+        etiqueta={[titulo, es.partida.completada, resumen].filter((texto) => texto !== null).join(', ')}
+      >
         <View style={styles.textos}>
           <Text style={styles.titulo}>{titulo}</Text>
           {resumen !== null && <Text style={styles.detalle}>{resumen}</Text>}
         </View>
-        <Text style={styles.completada}>{`${iconos.tilde} ${es.partida.completada}`}</Text>
+        {completada}
       </Card>
     );
   }
@@ -61,36 +104,66 @@ export function TarjetaDeRonda({ ronda, partida, onTocarParticipante, onSiguient
     );
   }
 
-  const reglas = reglasConPuntaje(ronda, partida.plantilla);
   return (
     <Card estado="activa">
-      <View style={styles.cabecera}>
-        <View style={styles.fila}>
-          <Text accessibilityRole="header" style={[styles.titulo, styles.textos]}>
-            {titulo}
-          </Text>
-          <Chip texto={es.partida.enJuego} variante="borde" />
-        </View>
-        {ronda.objetivo !== undefined && <Text style={styles.detalle}>{es.partida.objetivo(ronda.objetivo)}</Text>}
-        {reglas.length > 0 && <Text style={styles.reglas}>{reglas.join(' · ')}</Text>}
-      </View>
-
-      {partida.participantes.map((participante) => (
-        <FilaDeParticipante
-          key={participante.id}
-          participante={participante}
-          puntaje={puntajeCargado(ronda, partida.plantilla, participante.id)}
-          total={totalDeParticipante(partida, participante.id)}
-          reglas={reglasMarcadas(ronda, partida.plantilla, participante.id)}
-          onPress={onTocarParticipante && (() => onTocarParticipante(participante.id))}
-        />
-      ))}
-
+      <Cabecera
+        ronda={ronda}
+        partida={partida}
+        titulo={titulo}
+        marca={<Chip texto={es.partida.enJuego} variante="borde" />}
+      />
+      <Filas ronda={ronda} partida={partida} onTocarParticipante={onTocarParticipante} />
       {onSiguiente !== undefined && haySiguienteRonda(partida, ronda.numero) && (
         <Siguiente ronda={ronda} partida={partida} onSiguiente={onSiguiente} />
       )}
     </Card>
   );
+}
+
+interface PropsCabecera {
+  ronda: RondaJugada;
+  partida: Partida;
+  titulo: string;
+  /** A la derecha del titulo: EN JUEGO o ✓ Completada. */
+  marca: ReactNode;
+}
+
+/** Titulo, objetivo y lo que valen las reglas, con la linea que la separa de las filas. */
+function Cabecera({ ronda, partida, titulo, marca }: PropsCabecera) {
+  const reglas = reglasConPuntaje(ronda, partida.plantilla);
+  return (
+    <View style={styles.cabecera}>
+      <View style={styles.fila}>
+        <Text accessibilityRole="header" style={[styles.titulo, styles.textos]}>
+          {titulo}
+        </Text>
+        {marca}
+      </View>
+      {ronda.objetivo !== undefined && <Text style={styles.detalle}>{es.partida.objetivo(ronda.objetivo)}</Text>}
+      {reglas.length > 0 && <Text style={styles.reglas}>{reglas.join(' · ')}</Text>}
+    </View>
+  );
+}
+
+/** Una fila por participante, con el acumulado hasta esta ronda (cambio 80). */
+function Filas({ ronda, partida, onTocarParticipante }: Pick<Props, 'ronda' | 'partida' | 'onTocarParticipante'>) {
+  return partida.participantes.map((participante) => (
+    <FilaDeParticipante
+      key={participante.id}
+      participante={participante}
+      puntaje={puntajeCargado(ronda, partida.plantilla, participante.id)}
+      total={totalHastaRonda(partida, participante.id, ronda.numero)}
+      reglas={reglasMarcadas(ronda, partida.plantilla, participante.id)}
+      onPress={onTocarParticipante && (() => onTocarParticipante(participante.id))}
+    />
+  ));
+}
+
+/** «Falta asignar: Bajó primero» (RF-706), o nada. */
+function ReglasSinAsignar({ ronda, partida }: Pick<Props, 'ronda' | 'partida'>) {
+  const sinAsignar = reglasSinAsignar(ronda, partida.plantilla);
+  if (sinAsignar.length === 0) return null;
+  return <Text style={styles.faltante}>{es.partida.faltanReglas(sinAsignar.map((regla) => regla.titulo))}</Text>;
 }
 
 /**
@@ -104,7 +177,6 @@ function Siguiente({ ronda, partida, onSiguiente }: Required<Pick<Props, 'ronda'
 
   const { plantilla, participantes } = partida;
   const puede = puedeCerrarRonda(ronda, plantilla, participantes).puede;
-  const sinAsignar = reglasSinAsignar(ronda, plantilla);
 
   async function avanzar() {
     setAvanzando(true);
@@ -122,9 +194,7 @@ function Siguiente({ ronda, partida, onSiguiente }: Required<Pick<Props, 'ronda'
   return (
     <View style={styles.siguiente}>
       <Boton titulo={es.partida.siguiente} onPress={avanzar} deshabilitado={!puede || avanzando} />
-      {sinAsignar.length > 0 && (
-        <Text style={styles.faltante}>{es.partida.faltanReglas(sinAsignar.map((regla) => regla.titulo))}</Text>
-      )}
+      <ReglasSinAsignar ronda={ronda} partida={partida} />
       {errorAlAvanzar && <Text style={styles.faltante}>{es.comun.errorGuardar}</Text>}
     </View>
   );
@@ -249,6 +319,7 @@ const styles = StyleSheet.create({
   },
   presionada: { opacity: 0.7 },
   siguiente: { marginTop: espacios.md, gap: espacios.xs },
+  corregida: { marginTop: espacios.xs },
   faltante: { ...tipografia.secundario, color: colores.grisOscuro, textAlign: 'center' },
   nombre: { ...tipografia.cuerpoFuerte, color: colores.tinta },
   reglasDelJugador: { ...tipografia.chico, color: colores.grisOscuro },

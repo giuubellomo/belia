@@ -1,5 +1,12 @@
 import { REGLA_CORTO } from '../rondas';
-import { mejoresDeRonda, puntajeCargado, puntajeDeRonda, totalDeParticipante, totalesDePartida } from '../scoring';
+import {
+  mejoresDeRonda,
+  puntajeCargado,
+  puntajeDeRonda,
+  totalDeParticipante,
+  totalesDePartida,
+  totalHastaRonda,
+} from '../scoring';
 import type {
   EntradaRonda,
   ModoPuntos,
@@ -208,5 +215,18 @@ describe('puntajeCargado', () => {
 
   it('un cero cargado es un puntaje, no un vacio', () => {
     expect(puntajeCargado({ ...r, entradas: [entrada('a', 0)] }, plantilla('suma'), 'a')).toBe(0);
+  });
+});
+
+describe('totalHastaRonda', () => {
+  const r = (numero: number, entradas: EntradaRonda[]): RondaJugada => ({ numero, estado: 'cerrada', entradas });
+  const p = partida('suma', [participante('a')], [r(1, [entrada('a', 10)]), r(2, [entrada('a', 5)]), r(3, [entrada('a', 1)])]);
+
+  it('suma esa ronda y las anteriores', () => {
+    expect(totalHastaRonda(p, 'a', 2)).toBe(15);
+  });
+
+  it('en la ultima es el total de la partida', () => {
+    expect(totalHastaRonda(p, 'a', 3)).toBe(totalDeParticipante(p, 'a'));
   });
 });
