@@ -210,8 +210,7 @@ export const es = {
     sinCargar: 'Sin cargar',
     /** Lo que lee el lector de pantalla en la fila de un participante: «Ana: −20, total −50». */
     puntajeDe: (nombre: string, puntaje: string, total: string) => `${nombre}: ${puntaje}, total ${total}`,
-    // RF-706 / RF-707: por que no se puede cerrar la ronda
-    faltanPuntajes: 'Falta cargar el puntaje de todos',
+    // RF-706: por que no se puede cerrar la ronda. Los puntajes que faltan no se avisan (cambio 79).
     faltanReglas: (reglas: string[]) => `Falta asignar: ${reglas.join(', ')}`,
   },
 
@@ -224,6 +223,8 @@ export const es = {
       objetivo === undefined ? `Ronda ${ronda}` : `Ronda ${ronda} · ${objetivo}`,
     /** Una regla de asignacion unica que ya tiene otro: al guardar se le saca (cambio 76). */
     laTiene: (nombres: string[]) => `La tiene ${nombres.join(' y ')}`,
+    /** Debajo del stepper apagado, cuando se marca la «Cortó» de Karioka (cambio 79). */
+    cortoSinPuntaje: 'El que corta no carga puntaje',
     // Solo para el lector de pantalla
     escribirPuntaje: 'Escribir el puntaje',
   },

@@ -10,11 +10,13 @@
  *
  * `icono` es una clave. El set de iconos lo define el sistema de diseño (fase 3).
  */
+import { REGLA_CORTO } from '@/domain/rondas';
 import type { Plantilla } from '@/domain/types';
 import { asegurarPredefinidas } from '@/repositories/plantillas';
 
 const BAJO_PRIMERO = '583c88cf-c86e-4275-99d9-fbf12121350d';
-const CORTO = '841a8dd9-f409-4553-9826-79e0ea157cfc';
+/** El dominio la reconoce por este id (cambio 79). */
+const CORTO = REGLA_CORTO;
 const PUNTAJE_BASE = -10;
 
 /** A-1 (provisional): el objetivo de cada ronda y lo que valen Bajó primero y Cortó. */

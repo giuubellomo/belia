@@ -270,12 +270,14 @@ export function guardarCarga(
 
     const ronda = partida.rondas.find((r) => r.numero === numeroRonda)!;
     const nueva = aplicarCarga(ronda, partida.plantilla, participanteId, puntos, reglasMarcadas);
+    // El del dominio y no el que llego: el que corto queda en 0 (cambio 79).
+    const cargado = nueva.entradas.find((e) => e.participanteId === participanteId)!.puntosManuales;
 
     await db.runAsync(
       `INSERT INTO puntaje_ronda (ronda_partida_id, participante_id, puntos_manuales)
        VALUES (?, ?, ?)
        ON CONFLICT (ronda_partida_id, participante_id) DO UPDATE SET puntos_manuales = excluded.puntos_manuales`,
-      [rondaId, participanteId, puntos],
+      [rondaId, participanteId, cargado],
     );
 
     // Todas las de la ronda y no solo las de este participante: una regla unica

@@ -1,6 +1,13 @@
+import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { reglasDeLaRonda, puntajeDeReglaEnRonda } from '@/domain/rondas';
+import {
+  haySiguienteRonda,
+  puedeCerrarRonda,
+  puntajeDeReglaEnRonda,
+  reglasDeLaRonda,
+  reglasSinAsignar,
+} from '@/domain/rondas';
 import { mejoresDeRonda, puntajeCargado, totalDeParticipante } from '@/domain/scoring';
 import type { Participante, Partida, Plantilla, RondaJugada } from '@/domain/types';
 import { conSigno, es } from '@/i18n/es';
@@ -8,6 +15,7 @@ import { iconos } from '@/theme/iconos';
 import { AREA_TOCABLE_MINIMA, colores, espacios, numerales, radios, tipografia } from '@/theme/tokens';
 
 import { Avatar } from './Avatar';
+import { Boton } from './Boton';
 import { Card } from './Card';
 import { Chip } from './Chip';
 
@@ -16,6 +24,8 @@ interface Props {
   partida: Partida;
   /** Tocar la fila de un participante en la ronda en juego: abre el popup de carga (7.4). */
   onTocarParticipante?: (participanteId: string) => void;
+  /** SIGUIENTE: cierra la ronda en juego y abre la que sigue (7.5). */
+  onSiguiente?: () => Promise<void>;
 }
 
 /**
@@ -23,9 +33,10 @@ interface Props {
  * expandida, o bloqueada. La en juego (paso 7.2, RF-703, RF-704) muestra el
  * objetivo, lo que valen las reglas y una fila por participante con su puntaje
  * de la ronda, sin botones de regla: las reglas se marcan en el popup (7.4).
- * A su derecha va el acumulado de la partida (paso 7.3, A-6).
+ * A su derecha va el acumulado de la partida (paso 7.3, A-6). Al pie, SIGUIENTE
+ * (paso 7.5, RF-706 a RF-708), salvo en la ultima ronda de rondas fijas.
  */
-export function TarjetaDeRonda({ ronda, partida, onTocarParticipante }: Props) {
+export function TarjetaDeRonda({ ronda, partida, onTocarParticipante, onSiguiente }: Props) {
   const titulo = es.ronda.titulo(ronda.numero);
 
   if (ronda.estado === 'cerrada') {
@@ -68,13 +79,54 @@ export function TarjetaDeRonda({ ronda, partida, onTocarParticipante }: Props) {
         <FilaDeParticipante
           key={participante.id}
           participante={participante}
-          puntaje={puntajeCargado(ronda, participante.id, partida.plantilla.modoPuntos)}
+          puntaje={puntajeCargado(ronda, partida.plantilla, participante.id)}
           total={totalDeParticipante(partida, participante.id)}
           reglas={reglasMarcadas(ronda, partida.plantilla, participante.id)}
           onPress={onTocarParticipante && (() => onTocarParticipante(participante.id))}
         />
       ))}
+
+      {onSiguiente !== undefined && haySiguienteRonda(partida, ronda.numero) && (
+        <Siguiente ronda={ronda} partida={partida} onSiguiente={onSiguiente} />
+      )}
     </Card>
+  );
+}
+
+/**
+ * Habilitado segun `puedeCerrarRonda`. Mientras no, nombra las reglas sin
+ * asignar (RF-706). Los puntajes que faltan no se avisan en texto (cambio 79):
+ * se ven en las casillas vacias.
+ */
+function Siguiente({ ronda, partida, onSiguiente }: Required<Pick<Props, 'ronda' | 'partida' | 'onSiguiente'>>) {
+  const [avanzando, setAvanzando] = useState(false);
+  const [errorAlAvanzar, setErrorAlAvanzar] = useState(false);
+
+  const { plantilla, participantes } = partida;
+  const puede = puedeCerrarRonda(ronda, plantilla, participantes).puede;
+  const sinAsignar = reglasSinAsignar(ronda, plantilla);
+
+  async function avanzar() {
+    setAvanzando(true);
+    setErrorAlAvanzar(false);
+    try {
+      // Si sale bien esta tarjeta pasa a ser la de una ronda cerrada y este
+      // estado se desmonta: no hace falta volver `avanzando` a false.
+      await onSiguiente();
+    } catch {
+      setErrorAlAvanzar(true);
+      setAvanzando(false);
+    }
+  }
+
+  return (
+    <View style={styles.siguiente}>
+      <Boton titulo={es.partida.siguiente} onPress={avanzar} deshabilitado={!puede || avanzando} />
+      {sinAsignar.length > 0 && (
+        <Text style={styles.faltante}>{es.partida.faltanReglas(sinAsignar.map((regla) => regla.titulo))}</Text>
+      )}
+      {errorAlAvanzar && <Text style={styles.faltante}>{es.comun.errorGuardar}</Text>}
+    </View>
   );
 }
 
@@ -196,6 +248,8 @@ const styles = StyleSheet.create({
     paddingVertical: espacios.xs,
   },
   presionada: { opacity: 0.7 },
+  siguiente: { marginTop: espacios.md, gap: espacios.xs },
+  faltante: { ...tipografia.secundario, color: colores.grisOscuro, textAlign: 'center' },
   nombre: { ...tipografia.cuerpoFuerte, color: colores.tinta },
   reglasDelJugador: { ...tipografia.chico, color: colores.grisOscuro },
   casilla: {

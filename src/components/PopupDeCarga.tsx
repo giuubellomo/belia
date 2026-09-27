@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Keyboard, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { puntajeDeReglaEnRonda, quienesTienenRegla, reglasDeLaRonda } from '@/domain/rondas';
+import { puntajeDeReglaEnRonda, quienesTienenRegla, REGLA_CORTO, reglasDeLaRonda } from '@/domain/rondas';
 import type { Participante, Partida, Regla, RondaJugada } from '@/domain/types';
 import { conSigno, es } from '@/i18n/es';
 import { iconos } from '@/theme/iconos';
@@ -100,11 +100,14 @@ function Formulario({ partida, ronda, participante, onGuardar }: PropsFormulario
   const reglas = reglasDeLaRonda(plantilla, ronda.numero);
   const signo = plantilla.modoPuntos === 'suma' ? 1 : -1;
 
+  // Cambio 79: el que corto no carga puntaje, queda en 0 y el stepper se apaga.
+  const corto = marcadas.includes(REGLA_CORTO);
+
   function alternar(reglaId: string) {
     Keyboard.dismiss();
-    setMarcadas((actuales) =>
-      actuales.includes(reglaId) ? actuales.filter((id) => id !== reglaId) : [...actuales, reglaId],
-    );
+    const marcar = !marcadas.includes(reglaId);
+    if (marcar && reglaId === REGLA_CORTO) setPuntos(0);
+    setMarcadas((actuales) => (marcar ? [...actuales, reglaId] : actuales.filter((id) => id !== reglaId)));
   }
 
   async function guardar() {
@@ -136,7 +139,9 @@ function Formulario({ partida, ronda, participante, onGuardar }: PropsFormulario
           tamano="grande"
           escribible
           etiquetaEscribir={es.carga.escribirPuntaje}
+          deshabilitado={corto}
         />
+        {corto && <Text style={styles.ayuda}>{es.carga.cortoSinPuntaje}</Text>}
       </View>
 
       {reglas.length > 0 && (
@@ -239,4 +244,5 @@ const styles = StyleSheet.create({
   tildeMarcado: { backgroundColor: colores.tinta, borderColor: colores.tinta },
   tildeTexto: { color: colores.fondo, fontSize: 15, fontWeight: '700' },
   error: { ...tipografia.secundario, color: colores.tinta, textAlign: 'center' },
+  ayuda: { ...tipografia.chico, color: colores.grisOscuro, textAlign: 'center' },
 });

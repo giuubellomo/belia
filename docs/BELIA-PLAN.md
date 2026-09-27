@@ -941,7 +941,7 @@ escribiendo una suma dentro de un componente, está mal.
   Verificado en el teléfono: los dos checkpoints (bajó primero pasa de uno a otro y los
   totales se actualizan, sin `setState` sobre datos de la base).
 
-- [ ] **7.5 — Avanzar de ronda** (RF-706, RF-707, RF-708)
+- [x] **7.5 — Avanzar de ronda** (RF-706, RF-707, RF-708)
 
   `SIGUIENTE` habilitado según `puedeCerrarRonda`. Si falta una regla de alcance `todas`,
   mostrar cuál (RF-706). Al cerrar: la ronda pasa a `cerrada`, la siguiente a `en_curso`.
@@ -949,6 +949,16 @@ escribiendo una suma dentro de un componente, está mal.
 
   **Checkpoint:** una partida de Karioka avanza de la ronda 1 a la 2 y el objetivo cambia.
   Una partida Simple genera rondas indefinidamente.
+
+  **Cómo quedó** (ver registro, cambios 78 y 79): SIGUIENTE va al pie de la ronda en juego y
+  cierra con `partidas.cerrarRonda`. Mientras no se pueda, dice solo qué reglas faltan
+  asignar; los puntajes que faltan se ven en las casillas vacías, sin texto. En la última
+  ronda de una plantilla con rondas fijas no hay SIGUIENTE (`haySiguienteRonda`): se termina
+  con TERMINAR PARTIDA. La «Cortó» de Karioka pide que quien corta quede en 0 y que los
+  demás carguen más de 0.
+
+  Verificado en el teléfono: Karioka pasa de la 1 a la 2 con otro objetivo, y las
+  validaciones de «Cortó».
 
 - [ ] **7.6 — Corregir una ronda cerrada** (RF-709)
 
@@ -1217,3 +1227,5 @@ Durante el paso 7.1 (estructura de la pantalla):
 | 75 | `puntajeCargado(ronda, participanteId, modo)` nueva en `scoring.ts` (con tests): el puntaje de la ronda, o null si no hay puntaje manual, aunque tenga una regla marcada. La línea de reglas de la ronda en juego nombra solo las de alcance `todas`, igual que el resumen de la cerrada (cambio 72). | Qué fila se ve vacía tiene que coincidir con lo que exige cerrar la ronda (RF-707), y es lógica: va al dominio. Las opcionales no aparecen en la tarjeta del mockup 4; se ven en el popup de carga. |
 | 76 | Popup de carga: el stepper va de a 5 y tocar el número abre el teclado numérico (`Stepper` con `escribible`). Una regla de asignación única que ya tiene otro muestra «La tiene …». Se guarda todo junto con `partidas.guardarCarga`, y `aplicarCarga` y `quienesTienenRegla` son nuevas en `rondas.ts` (con tests). | Decisión de la usuaria: de a 1 no se llega a un puntaje como 135, y el mockup no dice nada de a quién se le va a sacar la regla. Con GUARDAR, el puntaje y las marcas se escriben juntos o no se escribe nada. |
 | 77 | En la ronda en juego, debajo del nombre de cada jugador van las reglas que tiene marcadas en esa ronda («Bajó primero · Cortó»), también las opcionales. | Pedido de la usuaria al probar el 7.4: ver de un vistazo quién bajó primero y quién cortó. |
+| 78 | En la última ronda de una plantilla con rondas fijas no hay SIGUIENTE: se termina con TERMINAR PARTIDA (8.1). `haySiguienteRonda` nueva en `rondas.ts` (con tests). | Decisión de la usuaria: cerrar la última ronda no abre nada, y el 8.1 ya avisa si quedó incompleta. |
+| 79 | **La «Cortó» de Karioka**: quien la tiene queda en 0 (`aplicarCarga` lo fuerza y el popup apaga el stepper) y, en esa ronda, los demás tienen que cargar más de 0. Se reconoce por su id fijo de la semilla (`REGLA_CORTO` en `rondas.ts`): en una copia de Karioka, «Cortó» es una regla común. `cargoPuntaje` y `rondaConCorte` nuevas; `todosCargaron` y `puntajeCargado` reciben la plantilla. Un 0 de quien no cortó se ve como casilla vacía. SIGUIENTE no avisa en texto los puntajes que faltan: se fue `partida.faltanPuntajes`. | Decisión de la usuaria al probar el 7.5: así se juega la Karioka. Prefirió no sumar una opción al editor de reglas. |

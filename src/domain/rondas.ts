@@ -6,7 +6,15 @@
  * tocan la que reciben.
  */
 
-import type { Participante, Plantilla, Regla, RondaJugada } from './types';
+import type { Participante, Partida, Plantilla, Regla, RondaJugada } from './types';
+
+/**
+ * La «Cortó» de Karioka, por el id fijo que tiene en la semilla (cambio 79):
+ * quien corta no carga puntaje y, en esa ronda, todos los demas tienen que
+ * cargar mas de 0. Solo esa regla: una copia de Karioka tiene ids nuevos y ahi
+ * «Cortó» es una regla comun.
+ */
+export const REGLA_CORTO = '841a8dd9-f409-4553-9826-79e0ea157cfc';
 
 export type ResultadoCierre =
   | { puede: true }
@@ -35,15 +43,30 @@ export function puntajeDeReglaEnRonda(
   return ajuste ?? regla.puntajeBase;
 }
 
+/** ¿Se juega la «Cortó» de Karioka en esa ronda? */
+export function rondaConCorte(plantilla: Plantilla, numeroRonda: number): boolean {
+  return reglasDeLaRonda(plantilla, numeroRonda).some((regla) => regla.id === REGLA_CORTO);
+}
+
+/**
+ * RF-707: ¿el participante ya cargo un puntaje que sirve para cerrar la ronda?
+ * Tiene que haber puntaje manual. Si la ronda tiene «Cortó» (cambio 79), el que
+ * corto queda en 0 y los demas tienen que tener mas de 0.
+ */
+export function cargoPuntaje(ronda: RondaJugada, plantilla: Plantilla, participanteId: string): boolean {
+  const entrada = ronda.entradas.find((e) => e.participanteId === participanteId);
+  if (entrada === undefined || entrada.puntosManuales === null) return false;
+  if (!rondaConCorte(plantilla, ronda.numero)) return true;
+  return REGLA_CORTO in entrada.marcas ? entrada.puntosManuales === 0 : entrada.puntosManuales > 0;
+}
+
 /** RF-707: ¿todos cargaron su puntaje? */
 export function todosCargaron(
   ronda: RondaJugada,
+  plantilla: Plantilla,
   participantes: Participante[],
 ): boolean {
-  return participantes.every((participante) => {
-    const entrada = ronda.entradas.find((e) => e.participanteId === participante.id);
-    return entrada !== undefined && entrada.puntosManuales !== null;
-  });
+  return participantes.every((participante) => cargoPuntaje(ronda, plantilla, participante.id));
 }
 
 /** RF-706: las reglas de alcance 'todas' tienen que estar asignadas a alguien. */
@@ -60,7 +83,7 @@ export function puedeCerrarRonda(
   plantilla: Plantilla,
   participantes: Participante[],
 ): ResultadoCierre {
-  if (!todosCargaron(ronda, participantes)) {
+  if (!todosCargaron(ronda, plantilla, participantes)) {
     return { puede: false, motivo: 'faltan_puntajes' };
   }
 
@@ -132,7 +155,8 @@ export function desmarcarRegla(
  * participante y sus marcas quedan como las dejo en el popup. Las que ya tenia
  * y siguen marcadas conservan los puntos que se congelaron al marcarlas (C-4);
  * las nuevas pasan por `marcarRegla`, que se las saca a otro si son de
- * asignacion unica (RF-406). Pura, como las otras dos.
+ * asignacion unica (RF-406). Si marco la «Cortó» de Karioka, el puntaje queda
+ * en 0 (cambio 79). Pura, como las otras dos.
  */
 export function aplicarCarga(
   ronda: RondaJugada,
@@ -143,6 +167,7 @@ export function aplicarCarga(
 ): RondaJugada {
   const antes = ronda.entradas.find((e) => e.participanteId === participanteId)?.marcas ?? {};
   const marcadas = new Set(reglasMarcadas);
+  const puntos = marcadas.has(REGLA_CORTO) ? 0 : puntosManuales;
 
   let nueva = ronda;
   for (const reglaId of Object.keys(antes)) {
@@ -154,8 +179,8 @@ export function aplicarCarga(
 
   const yaTenia = nueva.entradas.some((e) => e.participanteId === participanteId);
   const entradas = yaTenia
-    ? nueva.entradas.map((e) => (e.participanteId === participanteId ? { ...e, puntosManuales } : e))
-    : [...nueva.entradas, { participanteId, puntosManuales, marcas: {} }];
+    ? nueva.entradas.map((e) => (e.participanteId === participanteId ? { ...e, puntosManuales: puntos } : e))
+    : [...nueva.entradas, { participanteId, puntosManuales: puntos, marcas: {} }];
 
   return { ...nueva, entradas };
 }
@@ -163,6 +188,16 @@ export function aplicarCarga(
 /** Quienes tienen marcada una regla en la ronda, en el orden de la ronda. */
 export function quienesTienenRegla(ronda: RondaJugada, reglaId: string): string[] {
   return ronda.entradas.filter((e) => reglaId in e.marcas).map((e) => e.participanteId);
+}
+
+/**
+ * ¿Cerrar esta ronda abre otra? Con rondas ilimitadas siempre; con rondas fijas,
+ * si la partida tiene la siguiente. En la ultima no hay SIGUIENTE: se termina
+ * con TERMINAR PARTIDA (paso 7.5, cambio 78).
+ */
+export function haySiguienteRonda(partida: Partida, numeroRonda: number): boolean {
+  if (partida.plantilla.rondasIlimitadas) return true;
+  return partida.rondas.some((ronda) => ronda.numero === numeroRonda + 1);
 }
 
 /**

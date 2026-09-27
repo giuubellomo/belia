@@ -5,6 +5,7 @@
  * componente o de un repositorio, esta en el lugar equivocado.
  */
 
+import { cargoPuntaje } from './rondas';
 import type { EntradaRonda, ModoPuntos, Partida, Plantilla, RondaJugada } from './types';
 
 /** C-1: lo que hizo un participante en una ronda. */
@@ -24,16 +25,17 @@ export function puntajeDeRonda(entrada: EntradaRonda, modo: ModoPuntos): number 
 /**
  * Lo que muestra la fila de un participante en la ronda en juego (paso 7.2,
  * RF-704): su puntaje de la ronda, o null si todavia no cargo. «Cargar» es lo
- * mismo que pide `todosCargaron` para cerrar la ronda: tener puntaje manual.
+ * mismo que pide `todosCargaron` para cerrar la ronda: un 0 de quien no corto,
+ * en una ronda con «Cortó», se ve vacio (cambio 79).
  */
 export function puntajeCargado(
   ronda: RondaJugada,
+  plantilla: Plantilla,
   participanteId: string,
-  modo: ModoPuntos,
 ): number | null {
   const entrada = ronda.entradas.find((e) => e.participanteId === participanteId);
-  if (entrada === undefined || entrada.puntosManuales === null) return null;
-  return puntajeDeRonda(entrada, modo);
+  if (entrada === undefined || !cargoPuntaje(ronda, plantilla, participanteId)) return null;
+  return puntajeDeRonda(entrada, plantilla.modoPuntos);
 }
 
 /** C-2: total acumulado de un participante en toda la partida. */

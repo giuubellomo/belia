@@ -19,7 +19,8 @@ import { colores, espacios, tipografia } from '@/theme/tokens';
  * Partida en curso (paso 7.1, RF-701, RF-702, RF-712): encabezado con el nombre,
  * que se elige al armarla y aca no se edita (registro, cambio 71), las rondas y
  * TERMINAR PARTIDA fijo abajo. Todo sale de la base via `usePartida`: salir y
- * volver deja todo igual. Tocar a un participante abre el popup de carga (7.4).
+ * volver deja todo igual. Tocar a un participante abre el popup de carga (7.4)
+ * y SIGUIENTE cierra la ronda en juego (7.5).
  */
 export default function PantallaDePartida() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -54,6 +55,7 @@ export default function PantallaDePartida() {
               setCarga({ numeroRonda: ronda.numero, participanteId });
               setCargaAbierta(true);
             }}
+            onSiguiente={() => mutar(() => partidas.cerrarRonda(partida.id, ronda.numero))}
           />
         ))}
       </ScrollView>

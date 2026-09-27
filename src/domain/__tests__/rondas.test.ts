@@ -1,11 +1,14 @@
 import {
   aplicarCarga,
+  cargoPuntaje,
   desmarcarRegla,
+  haySiguienteRonda,
   marcarRegla,
   numeroRondaEnCurso,
   puedeCerrarRonda,
   puntajeDeReglaEnRonda,
   quienesTienenRegla,
+  REGLA_CORTO,
   reglasDeLaRonda,
   reglasSinAsignar,
   todosCargaron,
@@ -13,6 +16,7 @@ import {
 import type {
   EntradaRonda,
   Participante,
+  Partida,
   Plantilla,
   Regla,
   RondaJugada,
@@ -118,22 +122,22 @@ describe('reglasDeLaRonda', () => {
 describe('todosCargaron', () => {
   it('es true cuando todos tienen puntaje', () => {
     const r = ronda(1, [entrada('a', 25), entrada('b', 0)]);
-    expect(todosCargaron(r, [participante('a'), participante('b')])).toBe(true);
+    expect(todosCargaron(r, plantilla(), [participante('a'), participante('b')])).toBe(true);
   });
 
   it('es false cuando alguien tiene puntosManuales en null', () => {
     const r = ronda(1, [entrada('a', 25), entrada('b', null)]);
-    expect(todosCargaron(r, [participante('a'), participante('b')])).toBe(false);
+    expect(todosCargaron(r, plantilla(), [participante('a'), participante('b')])).toBe(false);
   });
 
   it('es false cuando a alguien le falta la entrada entera', () => {
     const r = ronda(1, [entrada('a', 25)]);
-    expect(todosCargaron(r, [participante('a'), participante('b')])).toBe(false);
+    expect(todosCargaron(r, plantilla(), [participante('a'), participante('b')])).toBe(false);
   });
 
   it('un puntaje de 0 cuenta como cargado', () => {
     const r = ronda(1, [entrada('a', 0)]);
-    expect(todosCargaron(r, [participante('a')])).toBe(true);
+    expect(todosCargaron(r, plantilla(), [participante('a')])).toBe(true);
   });
 });
 
@@ -401,5 +405,63 @@ describe('quienesTienenRegla', () => {
     const r = ronda(2, [entrada('a', null, { bajo: -20 }), entrada('b'), entrada('c', 3, { bajo: -20 })]);
     expect(quienesTienenRegla(r, 'bajo')).toEqual(['a', 'c']);
     expect(quienesTienenRegla(r, 'corto')).toEqual([]);
+  });
+});
+
+describe('haySiguienteRonda', () => {
+  function partida(rondasIlimitadas: boolean, numeros: number[]): Partida {
+    return {
+      id: 'g1',
+      nombre: 'x',
+      estado: 'en_curso',
+      plantilla: plantilla({ rondasIlimitadas }),
+      participantes: [],
+      rondas: numeros.map((n) => ronda(n, [])),
+    };
+  }
+
+  it('con rondas fijas, si la partida tiene la siguiente', () => {
+    expect(haySiguienteRonda(partida(false, [1, 2]), 1)).toBe(true);
+  });
+
+  it('con rondas fijas, en la ultima no', () => {
+    expect(haySiguienteRonda(partida(false, [1, 2]), 2)).toBe(false);
+  });
+
+  it('con rondas ilimitadas siempre, aunque la siguiente todavia no exista', () => {
+    expect(haySiguienteRonda(partida(true, [1]), 1)).toBe(true);
+  });
+});
+
+// --- La «Cortó» de Karioka (cambio 79) -----------------------------------
+
+describe('cargoPuntaje con la Cortó de Karioka', () => {
+  const karioka = plantilla({ reglas: [regla('bajo'), regla(REGLA_CORTO)] });
+
+  it('el que corto cargo con 0; con mas de 0 no', () => {
+    expect(cargoPuntaje(ronda(1, [entrada('a', 0, { [REGLA_CORTO]: -10 })]), karioka, 'a')).toBe(true);
+    expect(cargoPuntaje(ronda(1, [entrada('a', 5, { [REGLA_CORTO]: -10 })]), karioka, 'a')).toBe(false);
+  });
+
+  it('los demas tienen que tener mas de 0', () => {
+    expect(cargoPuntaje(ronda(1, [entrada('b', 0)]), karioka, 'b')).toBe(false);
+    expect(cargoPuntaje(ronda(1, [entrada('b', 15)]), karioka, 'b')).toBe(true);
+  });
+
+  it('sin la Cortó de Karioka el 0 vale, aunque otra regla se llame corto', () => {
+    expect(cargoPuntaje(ronda(1, [entrada('b', 0, { corto: -10 })]), plantilla(), 'b')).toBe(true);
+  });
+
+  it('una ronda con un 0 de quien no corto no se puede cerrar', () => {
+    const r = ronda(1, [entrada('a', 0, { [REGLA_CORTO]: -10, bajo: -10 }), entrada('b', 0)]);
+    expect(puedeCerrarRonda(r, karioka, [participante('a'), participante('b')])).toEqual({
+      puede: false,
+      motivo: 'faltan_puntajes',
+    });
+  });
+
+  it('aplicarCarga deja en 0 al que marco la Cortó', () => {
+    const r = aplicarCarga(ronda(1, [entrada('a', 20)]), karioka, 'a', 20, [REGLA_CORTO]);
+    expect(r.entradas).toEqual([entrada('a', 0, { [REGLA_CORTO]: -10 })]);
   });
 });

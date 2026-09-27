@@ -30,6 +30,8 @@ interface Props {
   escribible?: boolean;
   /** Lo que lee el lector de pantalla en el numero cuando es escribible. */
   etiquetaEscribir?: string;
+  /** Fijo: sin botones ni teclado, en gris (el que corto, en el popup de carga). */
+  deshabilitado?: boolean;
 }
 
 export function Stepper({
@@ -44,6 +46,7 @@ export function Stepper({
   tamano = 'mediano',
   escribible = false,
   etiquetaEscribir,
+  deshabilitado = false,
 }: Props) {
   // null: se muestra el numero con su formato. Un texto: se esta escribiendo.
   const [escrito, setEscrito] = useState<string | null>(null);
@@ -78,7 +81,7 @@ export function Stepper({
         icono={iconos.menos}
         etiqueta={etiquetaRestar}
         tamano={boton}
-        deshabilitado={valor - paso < minimo}
+        deshabilitado={deshabilitado || valor - paso < minimo}
         onPress={() => {
           terminarDeEscribir();
           onCambiar(valor - paso);
@@ -95,7 +98,7 @@ export function Stepper({
           onBlur={() => setEscrito(null)}
           style={[estiloDelNumero, styles.escribiendo]}
         />
-      ) : escribible ? (
+      ) : escribible && !deshabilitado ? (
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={etiquetaEscribir}
@@ -106,7 +109,7 @@ export function Stepper({
           <Text style={[texto, numerales, styles.valor]}>{formato(valor)}</Text>
         </Pressable>
       ) : (
-        <Text accessibilityLiveRegion="polite" style={estiloDelNumero}>
+        <Text accessibilityLiveRegion="polite" style={[estiloDelNumero, deshabilitado && styles.apagado]}>
           {formato(valor)}
         </Text>
       )}
@@ -114,7 +117,7 @@ export function Stepper({
         icono={iconos.mas}
         etiqueta={etiquetaSumar}
         tamano={boton}
-        deshabilitado={valor + paso > maximo}
+        deshabilitado={deshabilitado || valor + paso > maximo}
         onPress={() => {
           terminarDeEscribir();
           onCambiar(valor + paso);
@@ -136,6 +139,7 @@ const styles = StyleSheet.create({
   compacto: { gap: espacios.xs },
   valor: { color: colores.tinta, textAlign: 'center', minWidth: 56 },
   valorAncho: { flex: 1 },
+  apagado: { color: colores.grisMedio },
   // Subrayado mientras se escribe, para que se note que es un campo.
   escribiendo: { borderBottomWidth: 2, borderBottomColor: colores.tinta, paddingVertical: 0 },
 });

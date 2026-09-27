@@ -1,3 +1,4 @@
+import { REGLA_CORTO } from '../rondas';
 import { mejoresDeRonda, puntajeCargado, puntajeDeRonda, totalDeParticipante, totalesDePartida } from '../scoring';
 import type {
   EntradaRonda,
@@ -184,18 +185,28 @@ describe('puntajeCargado', () => {
   };
 
   it('con puntaje manual devuelve el de la ronda, con el signo de modo y las marcas', () => {
-    expect(puntajeCargado(r, 'a', 'resta')).toBe(-30);
+    expect(puntajeCargado(r, plantilla('resta'), 'a')).toBe(-30);
   });
 
   it('con una marca pero sin puntaje manual todavia no cargo', () => {
-    expect(puntajeCargado(r, 'b', 'resta')).toBeNull();
+    expect(puntajeCargado(r, plantilla('resta'), 'b')).toBeNull();
   });
 
   it('sin entrada todavia no cargo', () => {
-    expect(puntajeCargado(r, 'c', 'resta')).toBeNull();
+    expect(puntajeCargado(r, plantilla('resta'), 'c')).toBeNull();
+  });
+
+  it('en una ronda con la Cortó de Karioka, el 0 de quien no corto se ve vacio', () => {
+    const karioka = {
+      ...plantilla('resta'),
+      reglas: [{ id: REGLA_CORTO, titulo: 'Cortó', puntajeBase: -10, alcance: 'todas' as const, asignacionUnica: true, orden: 0 }],
+    };
+    const conCorte = { ...r, entradas: [entrada('a', 0, { [REGLA_CORTO]: -10 }), entrada('b', 0)] };
+    expect(puntajeCargado(conCorte, karioka, 'a')).toBe(-10);
+    expect(puntajeCargado(conCorte, karioka, 'b')).toBeNull();
   });
 
   it('un cero cargado es un puntaje, no un vacio', () => {
-    expect(puntajeCargado({ ...r, entradas: [entrada('a', 0)] }, 'a', 'suma')).toBe(0);
+    expect(puntajeCargado({ ...r, entradas: [entrada('a', 0)] }, plantilla('suma'), 'a')).toBe(0);
   });
 });
