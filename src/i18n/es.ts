@@ -219,6 +219,13 @@ export const es = {
     puntajeDeLaRonda: 'Puntaje de la ronda',
     reglasDeLaRonda: 'Reglas de la ronda',
     guardar: 'GUARDAR',
+    /** Debajo del nombre, en el popup: «Ronda 2 · 1 pierna + 1 escalera», o solo «Ronda 2». */
+    subtitulo: (ronda: number, objetivo?: string) =>
+      objetivo === undefined ? `Ronda ${ronda}` : `Ronda ${ronda} · ${objetivo}`,
+    /** Una regla de asignacion unica que ya tiene otro: al guardar se le saca (cambio 76). */
+    laTiene: (nombres: string[]) => `La tiene ${nombres.join(' y ')}`,
+    // Solo para el lector de pantalla
+    escribirPuntaje: 'Escribir el puntaje',
   },
 
   finalizar: {

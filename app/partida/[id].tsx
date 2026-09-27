@@ -1,14 +1,17 @@
 import { useKeepAwake } from 'expo-keep-awake';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Boton } from '@/components/Boton';
 import { BotonIcono } from '@/components/BotonIcono';
+import { PopupDeCarga } from '@/components/PopupDeCarga';
 import { TarjetaDeRonda } from '@/components/TarjetaDeRonda';
 import type { Partida, RondaJugada } from '@/domain/types';
 import { usePartida } from '@/hooks/usePartida';
 import { es } from '@/i18n/es';
+import * as partidas from '@/repositories/partidas';
 import { iconos } from '@/theme/iconos';
 import { colores, espacios, tipografia } from '@/theme/tokens';
 
@@ -16,12 +19,16 @@ import { colores, espacios, tipografia } from '@/theme/tokens';
  * Partida en curso (paso 7.1, RF-701, RF-702, RF-712): encabezado con el nombre,
  * que se elige al armarla y aca no se edita (registro, cambio 71), las rondas y
  * TERMINAR PARTIDA fijo abajo. Todo sale de la base via `usePartida`: salir y
- * volver deja todo igual.
+ * volver deja todo igual. Tocar a un participante abre el popup de carga (7.4).
  */
 export default function PantallaDePartida() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { partida } = usePartida(id);
+  const { partida, mutar } = usePartida(id);
+  // A quien se le esta cargando. Se guarda aparte de `abierta` para que el popup
+  // no se vacie mientras se desvanece al cerrarse.
+  const [carga, setCarga] = useState<{ numeroRonda: number; participanteId: string } | null>(null);
+  const [cargaAbierta, setCargaAbierta] = useState(false);
 
   // RF-713: en la mesa nadie toca el telefono por un rato y la pantalla no se apaga.
   useKeepAwake();
@@ -39,7 +46,15 @@ export default function PantallaDePartida() {
 
       <ScrollView contentContainerStyle={styles.rondas}>
         {rondasAMostrar(partida).map((ronda) => (
-          <TarjetaDeRonda key={ronda.numero} ronda={ronda} partida={partida} />
+          <TarjetaDeRonda
+            key={ronda.numero}
+            ronda={ronda}
+            partida={partida}
+            onTocarParticipante={(participanteId) => {
+              setCarga({ numeroRonda: ronda.numero, participanteId });
+              setCargaAbierta(true);
+            }}
+          />
         ))}
       </ScrollView>
 
@@ -47,6 +62,17 @@ export default function PantallaDePartida() {
         {/* Confirmar y terminar es el paso 8.1. */}
         <Boton titulo={es.partida.terminarPartida} variante="secundario" onPress={() => {}} />
       </View>
+
+      <PopupDeCarga
+        visible={cargaAbierta}
+        partida={partida}
+        numeroRonda={carga?.numeroRonda ?? 0}
+        participanteId={carga?.participanteId ?? null}
+        onCerrar={() => setCargaAbierta(false)}
+        onGuardar={(puntos, reglas) =>
+          mutar(() => partidas.guardarCarga(partida.id, carga!.numeroRonda, carga!.participanteId, puntos, reglas))
+        }
+      />
     </SafeAreaView>
   );
 }

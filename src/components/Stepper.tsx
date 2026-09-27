@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Keyboard, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { iconos } from '@/theme/iconos';
 import { colores, espacios, numerales, radios, tipografia } from '@/theme/tokens';
@@ -22,6 +23,13 @@ interface Props {
    * compacto: en una fila (ajuste por ronda).
    */
   tamano?: 'grande' | 'mediano' | 'compacto';
+  /**
+   * Tocar el numero abre el teclado numerico para escribirlo (popup de carga,
+   * cambio 76). Se escribe sin signo: vale para `minimo` 0 o mas.
+   */
+  escribible?: boolean;
+  /** Lo que lee el lector de pantalla en el numero cuando es escribible. */
+  etiquetaEscribir?: string;
 }
 
 export function Stepper({
@@ -34,10 +42,33 @@ export function Stepper({
   maximo = Infinity,
   formato = String,
   tamano = 'mediano',
+  escribible = false,
+  etiquetaEscribir,
 }: Props) {
+  // null: se muestra el numero con su formato. Un texto: se esta escribiendo.
+  const [escrito, setEscrito] = useState<string | null>(null);
   const boton = tamano === 'grande' ? 48 : tamano === 'mediano' ? 36 : 28;
   const texto =
     tamano === 'grande' ? tipografia.numeroGrande : tamano === 'mediano' ? tipografia.subtitulo : tipografia.cuerpoFuerte;
+
+  const estiloDelNumero = [texto, numerales, styles.valor, tamano !== 'compacto' && styles.valorAncho];
+
+  /**
+   * Cada digito ya cambia el valor: asi GUARDAR toma lo escrito aunque el
+   * teclado siga abierto. Vacio vale el minimo, y nada se pasa del maximo.
+   */
+  function escribir(texto: string) {
+    const digitos = texto.replace(/[^0-9]/g, '');
+    setEscrito(digitos);
+    const numero = digitos === '' ? minimo : Number(digitos);
+    onCambiar(Math.min(maximo, Math.max(minimo, numero)));
+  }
+
+  function terminarDeEscribir() {
+    if (escrito === null) return;
+    Keyboard.dismiss();
+    setEscrito(null);
+  }
 
   return (
     <View
@@ -48,20 +79,46 @@ export function Stepper({
         etiqueta={etiquetaRestar}
         tamano={boton}
         deshabilitado={valor - paso < minimo}
-        onPress={() => onCambiar(valor - paso)}
+        onPress={() => {
+          terminarDeEscribir();
+          onCambiar(valor - paso);
+        }}
       />
-      <Text
-        accessibilityLiveRegion="polite"
-        style={[texto, numerales, styles.valor, tamano !== 'compacto' && styles.valorAncho]}
-      >
-        {formato(valor)}
-      </Text>
+      {escrito !== null ? (
+        <TextInput
+          autoFocus
+          value={escrito}
+          keyboardType="number-pad"
+          maxLength={String(maximo).length}
+          accessibilityLabel={etiquetaEscribir}
+          onChangeText={escribir}
+          onBlur={() => setEscrito(null)}
+          style={[estiloDelNumero, styles.escribiendo]}
+        />
+      ) : escribible ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={etiquetaEscribir}
+          accessibilityValue={{ text: formato(valor) }}
+          onPress={() => setEscrito(String(valor))}
+          style={styles.valorAncho}
+        >
+          <Text style={[texto, numerales, styles.valor]}>{formato(valor)}</Text>
+        </Pressable>
+      ) : (
+        <Text accessibilityLiveRegion="polite" style={estiloDelNumero}>
+          {formato(valor)}
+        </Text>
+      )}
       <BotonIcono
         icono={iconos.mas}
         etiqueta={etiquetaSumar}
         tamano={boton}
         deshabilitado={valor + paso > maximo}
-        onPress={() => onCambiar(valor + paso)}
+        onPress={() => {
+          terminarDeEscribir();
+          onCambiar(valor + paso);
+        }}
       />
     </View>
   );
@@ -79,4 +136,6 @@ const styles = StyleSheet.create({
   compacto: { gap: espacios.xs },
   valor: { color: colores.tinta, textAlign: 'center', minWidth: 56 },
   valorAncho: { flex: 1 },
+  // Subrayado mientras se escribe, para que se note que es un campo.
+  escribiendo: { borderBottomWidth: 2, borderBottomColor: colores.tinta, paddingVertical: 0 },
 });

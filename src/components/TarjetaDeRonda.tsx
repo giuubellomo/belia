@@ -70,6 +70,7 @@ export function TarjetaDeRonda({ ronda, partida, onTocarParticipante }: Props) {
           participante={participante}
           puntaje={puntajeCargado(ronda, participante.id, partida.plantilla.modoPuntos)}
           total={totalDeParticipante(partida, participante.id)}
+          reglas={reglasMarcadas(ronda, partida.plantilla, participante.id)}
           onPress={onTocarParticipante && (() => onTocarParticipante(participante.id))}
         />
       ))}
@@ -83,6 +84,8 @@ interface PropsFila {
   puntaje: number | null;
   /** El acumulado de toda la partida, con esta ronda incluida (C-2). */
   total: number;
+  /** Los titulos de las reglas que tiene marcadas en la ronda: «Bajó primero». */
+  reglas: string[];
   onPress?: () => void;
 }
 
@@ -90,14 +93,18 @@ interface PropsFila {
  * Mockup 4 y 5: avatar, nombre y a la derecha la casilla con el puntaje de la
  * ronda. Sin cargar, la casilla queda punteada con una raya: un lugar vacio
  * que se toca para cargar. A-6: el acumulado a la derecha, mas chico y en gris.
+ * Debajo del nombre, las reglas que se llevo en la ronda (cambio 77).
  */
-function FilaDeParticipante({ participante, puntaje, total, onPress }: PropsFila) {
+function FilaDeParticipante({ participante, puntaje, total, reglas, onPress }: PropsFila) {
   const vacia = puntaje === null;
   const valor = vacia ? es.partida.sinCargar : conSigno(puntaje);
   const contenido = (
     <>
       <Avatar tipo={participante.avatarTipo} valor={participante.avatarValor} nombre={participante.nombre} />
-      <Text style={styles.nombre}>{participante.nombre}</Text>
+      <View style={styles.textos}>
+        <Text style={styles.nombre}>{participante.nombre}</Text>
+        {reglas.length > 0 && <Text style={styles.reglasDelJugador}>{reglas.join(' · ')}</Text>}
+      </View>
       <View style={[styles.casilla, vacia && styles.casillaVacia]}>
         <Text style={[styles.puntaje, numerales, vacia && styles.puntajeVacio]}>
           {vacia ? iconos.raya : valor}
@@ -106,7 +113,7 @@ function FilaDeParticipante({ participante, puntaje, total, onPress }: PropsFila
       <Text style={[styles.total, numerales]}>{conSigno(total)}</Text>
     </>
   );
-  const etiqueta = es.partida.puntajeDe(participante.nombre, valor, conSigno(total));
+  const etiqueta = [es.partida.puntajeDe(participante.nombre, valor, conSigno(total)), ...reglas].join(', ');
 
   if (onPress === undefined) {
     return (
@@ -126,6 +133,14 @@ function FilaDeParticipante({ participante, puntaje, total, onPress }: PropsFila
       {contenido}
     </Pressable>
   );
+}
+
+/** Las reglas de la ronda que tiene marcadas un participante, en el orden de la plantilla. */
+function reglasMarcadas(ronda: RondaJugada, plantilla: Plantilla, participanteId: string): string[] {
+  const marcas = ronda.entradas.find((e) => e.participanteId === participanteId)?.marcas ?? {};
+  return reglasDeLaRonda(plantilla, ronda.numero)
+    .filter((regla) => regla.id in marcas)
+    .map((regla) => regla.titulo);
 }
 
 /**
@@ -181,7 +196,8 @@ const styles = StyleSheet.create({
     paddingVertical: espacios.xs,
   },
   presionada: { opacity: 0.7 },
-  nombre: { ...tipografia.cuerpoFuerte, color: colores.tinta, flex: 1 },
+  nombre: { ...tipografia.cuerpoFuerte, color: colores.tinta },
+  reglasDelJugador: { ...tipografia.chico, color: colores.grisOscuro },
   casilla: {
     minWidth: 68,
     alignItems: 'center',

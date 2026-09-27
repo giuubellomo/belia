@@ -14,7 +14,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 import { escribir, leer } from '@/db/client';
 import { MAXIMO_JUGADORES, MINIMO_JUGADORES } from '@/domain/participantes';
 import { nombreDePartida } from '@/domain/partidas';
-import { marcarRegla as marcarEnRonda, puedeCerrarRonda } from '@/domain/rondas';
+import { aplicarCarga, marcarRegla as marcarEnRonda, puedeCerrarRonda } from '@/domain/rondas';
 import type {
   AvatarTipo,
   EntradaRonda,
@@ -243,6 +243,53 @@ export function desmarcarRegla(
       'DELETE FROM marca_regla WHERE ronda_partida_id = ? AND regla_id = ? AND participante_id = ?',
       [rondaId, reglaId, participanteId],
     );
+  });
+}
+
+/**
+ * Paso 7.4. Lo que guarda el popup de carga, todo en una transaccion: el puntaje
+ * manual del participante y sus marcas tal como quedaron en el popup. Como se
+ * reparten las marcas lo decide `aplicarCarga` del dominio (RF-406, C-4); aca se
+ * reescriben las marcas de la ronda con lo que devuelve.
+ */
+export function guardarCarga(
+  partidaId: string,
+  numeroRonda: number,
+  participanteId: string,
+  puntos: number,
+  reglasMarcadas: string[],
+): Promise<void> {
+  if (!(Number.isInteger(puntos) && puntos >= 0)) {
+    return Promise.reject(new Error(`El puntaje manual va entero y positivo (A-2), llego ${puntos}`));
+  }
+
+  return escribir(async (db) => {
+    const partida = await partidaEditable(db, partidaId);
+    const rondaId = await rondaEditable(db, partida, numeroRonda);
+    exigirParticipante(partida, participanteId);
+
+    const ronda = partida.rondas.find((r) => r.numero === numeroRonda)!;
+    const nueva = aplicarCarga(ronda, partida.plantilla, participanteId, puntos, reglasMarcadas);
+
+    await db.runAsync(
+      `INSERT INTO puntaje_ronda (ronda_partida_id, participante_id, puntos_manuales)
+       VALUES (?, ?, ?)
+       ON CONFLICT (ronda_partida_id, participante_id) DO UPDATE SET puntos_manuales = excluded.puntos_manuales`,
+      [rondaId, participanteId, puntos],
+    );
+
+    // Todas las de la ronda y no solo las de este participante: una regla unica
+    // que marco se le saca a otro. Las que no cambiaron vuelven con sus puntos.
+    await db.runAsync('DELETE FROM marca_regla WHERE ronda_partida_id = ?', [rondaId]);
+    for (const entrada of nueva.entradas) {
+      for (const [reglaId, puntosAplicados] of Object.entries(entrada.marcas)) {
+        await db.runAsync(
+          `INSERT INTO marca_regla (ronda_partida_id, regla_id, participante_id, puntos_aplicados)
+           VALUES (?, ?, ?, ?)`,
+          [rondaId, reglaId, entrada.participanteId, puntosAplicados],
+        );
+      }
+    }
   });
 }
 

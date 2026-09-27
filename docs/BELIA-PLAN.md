@@ -916,7 +916,7 @@ escribiendo una suma dentro de un componente, está mal.
   en juego. Verificado en el teléfono con los totales en 0: que cambien al cargar se ve en el
   checkpoint del 7.4.
 
-- [ ] **7.4 — Popup de carga** (RF-705)
+- [x] **7.4 — Popup de carga** (RF-705)
 
   Se abre al tocar una fila: stepper de puntaje (siempre positivo, A-2) y la lista de reglas
   de esa ronda con su puntaje y un tilde.
@@ -930,6 +930,16 @@ escribiendo una suma dentro de un componente, está mal.
   **Checkpoint pendiente del 2.5:** guardar un puntaje desde el popup actualiza la fila y el
   acumulado sin ningún `setState` manual sobre datos de la base. Si no pasa, el problema
   está en `src/hooks/useConsulta.ts`, no en esta pantalla.
+
+  **Cómo quedó** (ver registro, cambios 76 y 77): `PopupDeCarga` guarda todo junto al tocar
+  GUARDAR, con `partidas.guardarCarga` en una transacción; cómo quedan las marcas lo decide
+  `aplicarCarga`, nueva en `rondas.ts` (las que ya tenía conservan sus puntos congelados).
+  El stepper va de a 5 y tocar el número abre el teclado numérico. Una regla única que ya
+  tiene otro dice «La tiene …». En la ronda en juego, debajo del nombre de cada jugador van
+  las reglas que se llevó.
+
+  Verificado en el teléfono: los dos checkpoints (bajó primero pasa de uno a otro y los
+  totales se actualizan, sin `setState` sobre datos de la base).
 
 - [ ] **7.5 — Avanzar de ronda** (RF-706, RF-707, RF-708)
 
@@ -1205,3 +1215,5 @@ Durante el paso 7.1 (estructura de la pantalla):
 | 73 | Sin el chip «+ Modo: suma de puntos» del mockup 5. | Se probó como chip informativo y a la usuaria no le gustó. |
 | 74 | Con rondas ilimitadas se dibuja una ronda bloqueada más al final, que no existe en la base (mockup 5). La bloqueada no lleva candado. EMPEZAR ahora abre la partida: se cierra lo que dejó pendiente el cambio 69. | La siguiente ronda de Simple recién se crea al cerrar la actual (7.5). El candado tiene el mismo problema de emoji de color que el del cambio 52. |
 | 75 | `puntajeCargado(ronda, participanteId, modo)` nueva en `scoring.ts` (con tests): el puntaje de la ronda, o null si no hay puntaje manual, aunque tenga una regla marcada. La línea de reglas de la ronda en juego nombra solo las de alcance `todas`, igual que el resumen de la cerrada (cambio 72). | Qué fila se ve vacía tiene que coincidir con lo que exige cerrar la ronda (RF-707), y es lógica: va al dominio. Las opcionales no aparecen en la tarjeta del mockup 4; se ven en el popup de carga. |
+| 76 | Popup de carga: el stepper va de a 5 y tocar el número abre el teclado numérico (`Stepper` con `escribible`). Una regla de asignación única que ya tiene otro muestra «La tiene …». Se guarda todo junto con `partidas.guardarCarga`, y `aplicarCarga` y `quienesTienenRegla` son nuevas en `rondas.ts` (con tests). | Decisión de la usuaria: de a 1 no se llega a un puntaje como 135, y el mockup no dice nada de a quién se le va a sacar la regla. Con GUARDAR, el puntaje y las marcas se escriben juntos o no se escribe nada. |
+| 77 | En la ronda en juego, debajo del nombre de cada jugador van las reglas que tiene marcadas en esa ronda («Bajó primero · Cortó»), también las opcionales. | Pedido de la usuaria al probar el 7.4: ver de un vistazo quién bajó primero y quién cortó. |

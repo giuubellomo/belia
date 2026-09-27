@@ -1,9 +1,11 @@
 import {
+  aplicarCarga,
   desmarcarRegla,
   marcarRegla,
   numeroRondaEnCurso,
   puedeCerrarRonda,
   puntajeDeReglaEnRonda,
+  quienesTienenRegla,
   reglasDeLaRonda,
   reglasSinAsignar,
   todosCargaron,
@@ -351,5 +353,53 @@ describe('numeroRondaEnCurso', () => {
 
   it('sin rondas devuelve 1, no 0 ni NaN', () => {
     expect(numeroRondaEnCurso([])).toBe(1);
+  });
+});
+
+// --- aplicarCarga (RF-705, RF-406, C-4) ----------------------------------
+
+describe('aplicarCarga', () => {
+  it('guarda el puntaje manual y marca las reglas nuevas con lo que valen en la ronda', () => {
+    const r = aplicarCarga(ronda(2, [entrada('a'), entrada('b')]), plantilla(), 'a', 15, ['bajo']);
+    expect(r.entradas).toEqual([entrada('a', 15, { bajo: -20 }), entrada('b')]);
+  });
+
+  it('una regla unica que tenia otro se la saca', () => {
+    const antes = ronda(2, [entrada('a', 5, { bajo: -20 }), entrada('b')]);
+    const r = aplicarCarga(antes, plantilla(), 'b', 10, ['bajo']);
+    expect(r.entradas).toEqual([entrada('a', 5), entrada('b', 10, { bajo: -20 })]);
+  });
+
+  it('una regla que ya tenia y sigue marcada conserva los puntos congelados', () => {
+    // -99 no es lo que vale hoy en la ronda 2: se congelo antes (C-4) y no se toca.
+    const antes = ronda(2, [entrada('a', 5, { bajo: -99 })]);
+    const r = aplicarCarga(antes, plantilla(), 'a', 30, ['bajo']);
+    expect(r.entradas).toEqual([entrada('a', 30, { bajo: -99 })]);
+  });
+
+  it('una regla que ya no esta marcada se desmarca', () => {
+    const antes = ronda(2, [entrada('a', 5, { bajo: -20, corto: -20 })]);
+    const r = aplicarCarga(antes, plantilla(), 'a', 5, ['corto']);
+    expect(r.entradas).toEqual([entrada('a', 5, { corto: -20 })]);
+  });
+
+  it('sin entrada previa la crea', () => {
+    const r = aplicarCarga(ronda(1, []), plantilla(), 'a', 0, []);
+    expect(r.entradas).toEqual([entrada('a', 0)]);
+  });
+
+  it('no toca la ronda que recibe', () => {
+    const antes = ronda(2, [entrada('a', 5, { bajo: -20 }), entrada('b')]);
+    const copia = JSON.parse(JSON.stringify(antes));
+    aplicarCarga(antes, plantilla(), 'b', 10, ['bajo']);
+    expect(antes).toEqual(copia);
+  });
+});
+
+describe('quienesTienenRegla', () => {
+  it('devuelve a quienes la tienen marcada, en el orden de la ronda', () => {
+    const r = ronda(2, [entrada('a', null, { bajo: -20 }), entrada('b'), entrada('c', 3, { bajo: -20 })]);
+    expect(quienesTienenRegla(r, 'bajo')).toEqual(['a', 'c']);
+    expect(quienesTienenRegla(r, 'corto')).toEqual([]);
   });
 });

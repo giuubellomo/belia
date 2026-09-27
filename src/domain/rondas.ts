@@ -128,6 +128,44 @@ export function desmarcarRegla(
 }
 
 /**
+ * Lo que guarda el popup de carga (paso 7.4, RF-705): el puntaje manual del
+ * participante y sus marcas quedan como las dejo en el popup. Las que ya tenia
+ * y siguen marcadas conservan los puntos que se congelaron al marcarlas (C-4);
+ * las nuevas pasan por `marcarRegla`, que se las saca a otro si son de
+ * asignacion unica (RF-406). Pura, como las otras dos.
+ */
+export function aplicarCarga(
+  ronda: RondaJugada,
+  plantilla: Plantilla,
+  participanteId: string,
+  puntosManuales: number,
+  reglasMarcadas: string[],
+): RondaJugada {
+  const antes = ronda.entradas.find((e) => e.participanteId === participanteId)?.marcas ?? {};
+  const marcadas = new Set(reglasMarcadas);
+
+  let nueva = ronda;
+  for (const reglaId of Object.keys(antes)) {
+    if (!marcadas.has(reglaId)) nueva = desmarcarRegla(nueva, reglaId, participanteId);
+  }
+  for (const reglaId of marcadas) {
+    if (!(reglaId in antes)) nueva = marcarRegla(nueva, plantilla, reglaId, participanteId);
+  }
+
+  const yaTenia = nueva.entradas.some((e) => e.participanteId === participanteId);
+  const entradas = yaTenia
+    ? nueva.entradas.map((e) => (e.participanteId === participanteId ? { ...e, puntosManuales } : e))
+    : [...nueva.entradas, { participanteId, puntosManuales, marcas: {} }];
+
+  return { ...nueva, entradas };
+}
+
+/** Quienes tienen marcada una regla en la ronda, en el orden de la ronda. */
+export function quienesTienenRegla(ronda: RondaJugada, reglaId: string): string[] {
+  return ronda.entradas.filter((e) => reglaId in e.marcas).map((e) => e.participanteId);
+}
+
+/**
  * El numero de la ronda que se esta jugando (RF-102, cambio 3 del registro: la
  * ronda en curso se deriva del estado, no hay campo `ronda_actual`).
  *
