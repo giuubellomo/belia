@@ -1001,13 +1001,22 @@ escribiendo una suma dentro de un componente, está mal.
   Verificado en el teléfono: el aviso, Cancelar, y al terminar la partida deja de estar en
   el Home.
 
-- [ ] **8.2 — Podio** (RF-801 a RF-804)
+- [x] **8.2 — Podio** (RF-801 a RF-804)
 
   `app/partida/[id]/final.tsx`. Usa `rankear()` del paso 1.3. Podio en orden visual
   2º–1º–3º y el resto en lista. Con dos participantes, sin escalón vacío (RF-803).
   Empates compartiendo posición (RF-804).
 
   **Checkpoint:** una partida de 4 con dos empatados en primer lugar se ve correcta.
+
+  **Cómo quedó** (ver registro, cambio 81): la partida se mudó a `app/partida/[id]/index.tsx`
+  para que el podio viva en `final.tsx`. Al confirmar TERMINAR se llega con `router.replace`,
+  así que atrás y «Volver al inicio» van al Home. Los tres primeros de `rankear()` en orden
+  2º–1º–3º; la altura y el color del escalón salen de la posición, así que los empatados
+  comparten número y altura.
+
+  Verificado en el teléfono: podio de 4 con empate en el primer lugar, de 2 sin escalón
+  vacío, y volver al inicio.
 
 ---
 
@@ -1247,3 +1256,4 @@ Durante el paso 7.1 (estructura de la pantalla):
 | 78 | En la última ronda de una plantilla con rondas fijas no hay SIGUIENTE: se termina con TERMINAR PARTIDA (8.1). `haySiguienteRonda` nueva en `rondas.ts` (con tests). | Decisión de la usuaria: cerrar la última ronda no abre nada, y el 8.1 ya avisa si quedó incompleta. |
 | 79 | **La «Cortó» de Karioka**: quien la tiene queda en 0 (`aplicarCarga` lo fuerza y el popup apaga el stepper) y, en esa ronda, los demás tienen que cargar más de 0. Se reconoce por su id fijo de la semilla (`REGLA_CORTO` en `rondas.ts`): en una copia de Karioka, «Cortó» es una regla común. `cargoPuntaje` y `rondaConCorte` nuevas; `todosCargaron` y `puntajeCargado` reciben la plantilla. Un 0 de quien no cortó se ve como casilla vacía. SIGUIENTE no avisa en texto los puntajes que faltan: se fue `partida.faltanPuntajes`. | Decisión de la usuaria al probar el 7.5: así se juega la Karioka. Prefirió no sumar una opción al editor de reglas. |
 | 80 | El total al lado de cada casilla es el acumulado **hasta esa ronda** (`totalHastaRonda`, nueva en `scoring.ts` con tests): en la ronda en juego da el total de la partida, y en una cerrada expandida, el total al terminarla. | Decisión de la usuaria: como en una planilla, el total de la partida en la ronda 1 confunde. |
+| 81 | `app/partida/[id].tsx` pasó a `app/partida/[id]/index.tsx`. Terminar la partida abre el podio con `router.replace`. En el podio, la altura y el color del escalón dependen de la posición y no del lugar en pantalla. | El podio que pide el plan (`app/partida/[id]/final.tsx`) necesita la carpeta. Con replace, la partida finalizada no queda en el historial. Así un empate en el primer lugar muestra dos escalones iguales (RF-804). |

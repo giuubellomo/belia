@@ -52,8 +52,9 @@ export default function PantallaDePartida() {
       return;
     }
     setConfirmando(false);
-    // RF-711: la partida ya no aparece en el Home. El podio es el paso 8.2.
-    router.back();
+    // RF-711: la partida ya no aparece en el Home. Replace: desde el podio, atras
+    // es el Home y no una partida finalizada.
+    router.replace({ pathname: '/partida/[id]/final', params: { id: partida.id } });
   };
 
   return (

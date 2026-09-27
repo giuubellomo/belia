@@ -56,8 +56,10 @@ function Navegacion() {
         {/* El editor dibuja su propio encabezado (mockup 3) y confirma antes de salir
             con cambios sin guardar: sin gesto de arrastrar, la ‹ es la unica salida. */}
         <Stack.Screen name="plantillas/[id]" options={{ headerShown: false, gestureEnabled: false }} />
-        {/* La partida dibuja su propio encabezado, con el nombre editable (mockup 4). */}
-        <Stack.Screen name="partida/[id]" options={{ headerShown: false }} />
+        {/* La partida dibuja su propio encabezado (mockup 4). */}
+        <Stack.Screen name="partida/[id]/index" options={{ headerShown: false }} />
+        {/* El podio (8.2): se llega con replace desde la partida, asi que atras es el Home. */}
+        <Stack.Screen name="partida/[id]/final" options={{ headerShown: false }} />
       </Stack.Protected>
     </Stack>
   );
