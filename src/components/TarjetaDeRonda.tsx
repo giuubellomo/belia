@@ -64,7 +64,7 @@ export function TarjetaDeRonda({
           accessibilityState={{ expanded: true }}
           accessibilityLabel={`${titulo}, ${es.partida.completada}`}
           onPress={onAlternar}
-          style={({ pressed }) => pressed && styles.presionada}
+          style={({ pressed }) => [styles.cabeceraTocable, pressed && styles.presionada]}
         >
           <Cabecera ronda={ronda} partida={partida} titulo={titulo} marca={completada} />
         </Pressable>
@@ -88,7 +88,8 @@ export function TarjetaDeRonda({
       >
         <View style={styles.textos}>
           <Text style={styles.titulo}>{titulo}</Text>
-          {resumen !== null && <Text style={styles.detalle}>{resumen}</Text>}
+          {/* RNF-4: el resumen lleva puntajes («Cortó: −10 pts»). */}
+          {resumen !== null && <Text style={[styles.detalle, numerales]}>{resumen}</Text>}
         </View>
         {completada}
       </Card>
@@ -140,7 +141,7 @@ function Cabecera({ ronda, partida, titulo, marca }: PropsCabecera) {
         {marca}
       </View>
       {ronda.objetivo !== undefined && <Text style={styles.detalle}>{es.partida.objetivo(ronda.objetivo)}</Text>}
-      {reglas.length > 0 && <Text style={styles.reglas}>{reglas.join(' · ')}</Text>}
+      {reglas.length > 0 && <Text style={[styles.reglas, numerales]}>{reglas.join(' · ')}</Text>}
     </View>
   );
 }
@@ -318,6 +319,8 @@ const styles = StyleSheet.create({
     paddingVertical: espacios.xs,
   },
   presionada: { opacity: 0.7 },
+  // RNF-3: en Simple la cabecera es solo el titulo, mas bajo que 44.
+  cabeceraTocable: { minHeight: AREA_TOCABLE_MINIMA },
   siguiente: { marginTop: espacios.md, gap: espacios.xs },
   corregida: { marginTop: espacios.xs },
   faltante: { ...tipografia.secundario, color: colores.grisOscuro, textAlign: 'center' },

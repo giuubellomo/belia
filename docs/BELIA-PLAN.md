@@ -1048,13 +1048,24 @@ escribiendo una suma dentro de un componente, está mal.
 
   Verificado en el teléfono.
 
-- [ ] **9.3 — Repaso de no funcionales**
+- [x] **9.3 — Repaso de no funcionales**
 
   - RNF-2: matá la app en medio de una ronda y verificá que no se perdió nada
   - RNF-3: ningún área tocable por debajo de 44
   - RNF-4: numerales tabulares en todos los puntajes
   - RNF-7: subí el tamaño de fuente del sistema al máximo y recorré las pantallas
   - RNF-8: medí el arranque en frío
+
+  **Cómo quedó** (ver registro, cambios 84 y 85): RNF-3 y RNF-4 revisados en el código; se
+  corrigieron la cabecera de una ronda cerrada expandida (menos de 44 en Simple) y los
+  numerales del resumen y de la línea de reglas. RNF-7: todo bien con la fuente al máximo;
+  el Home se veía cortado solo porque el tamaño se cambió con la app abierta, y al
+  reabrirla se ve bien. RNF-8: unos 4 segundos en Expo Go, casi todo bajando el código desde
+  la Mac; la splash queda para el build. De paso, los sheets se cierran deslizando hacia
+  abajo.
+
+  Verificado en el teléfono: RNF-2 (cerrar Expo Go en medio de una ronda no pierde lo
+  guardado), RNF-7 y el cierre deslizando.
 
 - [ ] **9.4 — Partida completa de punta a punta**
 
@@ -1274,3 +1285,5 @@ Durante el paso 7.1 (estructura de la pantalla):
 | 81 | `app/partida/[id].tsx` pasó a `app/partida/[id]/index.tsx`. Terminar la partida abre el podio con `router.replace`. En el podio, la altura y el color del escalón dependen de la posición y no del lugar en pantalla. | El podio que pide el plan (`app/partida/[id]/final.tsx`) necesita la carpeta. Con replace, la partida finalizada no queda en el historial. Así un empate en el primer lugar muestra dos escalones iguales (RF-804). |
 | 82 | **Configuración sin perfil y sin bienvenida.** El engranaje abre una pantalla con la versión de la app y «DeBello» abajo; no hay perfil que editar ni acceso a plantillas (ya está en el pie del Home). Se fueron `app/bienvenida.tsx`, `useDueno`, `es.bienvenida` y el `Stack.Protected` de `_layout`. El tema claro/oscuro sigue en fase 2. La fila del dueño queda en la base, sin uso. | Decisión de la usuaria: cierra el pendiente del cambio 66. El tema se consideró para el MVP y se dejó para fase 2 porque toca todas las pantallas. |
 | 83 | Eliminar una regla o una ronda en el editor pide confirmación: el «Eliminar» se reemplaza, en el mismo lugar, por la pregunta con Cancelar y Eliminar (`Eliminar.tsx`, que reúne los tres «Eliminar» al pie). **Un jugador del armado se saca sin preguntar**, aunque el RNF-6 nombre «borrar participante». | Decisión de la usuaria. Desde el cambio 65 el jugador no está guardado y se recupera volviéndolo a agregar; se probó con pregunta y no le gustó. En el lugar y no en otro popup porque en iOS un Modal no se abre encima de otro. |
+| 84 | Los bottom sheets se cierran deslizando hacia abajo desde la manija o el título, con `PanResponder` de React Native (sin dependencias nuevas). Pasados 120 puntos, o soltando rápido, se cierran; si no, vuelven. Cerrar así no guarda, igual que tocar afuera. | Lo pidió la usuaria al probar el 9.3. `BottomSheet` decía que hacía falta una librería de gestos; no hace falta. No se toma desde el contenido, para no pelear con su scroll. |
+| 85 | **Pendiente para el build: la splash y el ícono.** En Expo Go no se ve la splash (muestra el ícono), y `assets/splash-icon.png` y el ícono son los de ejemplo de la plantilla de Expo. Se configuran con `expo-splash-screen` cuando se arme la app instalable. | Decisión de la usuaria. Los 4 segundos de arranque en Expo Go son casi todos de bajar el código desde la Mac: una pantalla de carga de la app aparecería recién al final. |

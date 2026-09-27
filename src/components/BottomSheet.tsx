@@ -2,8 +2,10 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   Animated,
   Easing,
+  Keyboard,
   KeyboardAvoidingView,
   Modal,
+  PanResponder,
   Platform,
   Pressable,
   ScrollView,
@@ -33,10 +35,16 @@ interface Props {
   accionEncabezado?: ReactNode;
 }
 
+/** Cuanto hay que bajarlo, o que tan rapido, para que al soltarlo se cierre. */
+const DISTANCIA_PARA_CERRAR = 120;
+const VELOCIDAD_PARA_CERRAR = 0.8;
+
 /**
  * Sube desde abajo sobre un velo oscuro. Se cierra tocando el velo, con el boton
- * atras de Android o con la ✕. No se arrastra con el dedo: haria falta una
- * libreria de gestos que el plan no incluye. La manija de arriba es solo visual.
+ * atras de Android, con la ✕ o deslizandolo hacia abajo desde la manija o el
+ * titulo (paso 9.3, cambio 84). El gesto es `PanResponder`, que viene con React
+ * Native: no hace falta una libreria. No se toma desde el contenido, para no
+ * pelear con su scroll.
  */
 export function BottomSheet({ visible, onCerrar, titulo, children, pie, etiquetaCerrar, accionEncabezado }: Props) {
   const { height } = useWindowDimensions();
@@ -44,9 +52,37 @@ export function BottomSheet({ visible, onCerrar, titulo, children, pie, etiqueta
   const progreso = useRef(new Animated.Value(0)).current;
   // Se desmonta recien cuando termina de bajar, no apenas `visible` pasa a false.
   const [montado, setMontado] = useState(visible);
+  // Lo que el dedo lo bajo, sumado a la animacion de abrir y cerrar.
+  const arrastre = useRef(new Animated.Value(0)).current;
+  // El PanResponder se crea una vez: lee el onCerrar del ultimo render.
+  const cerrar = useRef(onCerrar);
+  cerrar.current = onCerrar;
+
+  const gesto = useRef(
+    PanResponder.create({
+      // Toma el toque apenas se apoya el dedo en la manija o el titulo. La ✕ es un
+      // Pressable mas adentro: lo pide primero, asi que un toque sigue llegando a ella.
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, { dx, dy }) => dy > 6 && Math.abs(dy) > Math.abs(dx),
+      // Una vez que arrastra, nadie se lo saca a mitad de camino.
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderGrant: () => Keyboard.dismiss(),
+      onPanResponderMove: (_, { dy }) => arrastre.setValue(Math.max(0, dy)),
+      onPanResponderRelease: (_, { dy, vy }) => {
+        if (dy > DISTANCIA_PARA_CERRAR || vy > VELOCIDAD_PARA_CERRAR) cerrar.current();
+        else volver();
+      },
+      onPanResponderTerminate: () => volver(),
+    }),
+  ).current;
+
+  function volver() {
+    Animated.spring(arrastre, { toValue: 0, useNativeDriver: true, bounciness: 0 }).start();
+  }
 
   useEffect(() => {
     if (visible) {
+      arrastre.setValue(0);
       setMontado(true);
       Animated.timing(progreso, {
         toValue: 1,
@@ -59,9 +95,12 @@ export function BottomSheet({ visible, onCerrar, titulo, children, pie, etiqueta
         if (finished) setMontado(false);
       });
     }
-  }, [visible, progreso]);
+  }, [visible, progreso, arrastre]);
 
-  const translateY = progreso.interpolate({ inputRange: [0, 1], outputRange: [height, 0] });
+  const translateY = Animated.add(
+    progreso.interpolate({ inputRange: [0, 1], outputRange: [height, 0] }),
+    arrastre,
+  );
 
   return (
     <Modal visible={montado} transparent animationType="none" onRequestClose={onCerrar} statusBarTranslucent>
@@ -78,16 +117,18 @@ export function BottomSheet({ visible, onCerrar, titulo, children, pie, etiqueta
             con el teclado abierto el sheet se achica y el contenido pasa a scrollear,
             en lugar de salirse por arriba con el encabezado y el primer campo. */}
         <Animated.View style={[styles.hoja, { transform: [{ translateY }] }]}>
-          <View style={styles.manija} />
+          <View {...gesto.panHandlers} style={styles.agarre}>
+            <View style={styles.manija} />
 
-          <View style={styles.encabezado}>
-            <Text accessibilityRole="header" style={styles.titulo}>
-              {titulo}
-            </Text>
-            {accionEncabezado ??
-              (etiquetaCerrar !== undefined && (
-                <BotonIcono icono={iconos.cerrar} etiqueta={etiquetaCerrar} tamano={32} onPress={onCerrar} />
-              ))}
+            <View style={styles.encabezado}>
+              <Text accessibilityRole="header" style={styles.titulo}>
+                {titulo}
+              </Text>
+              {accionEncabezado ??
+                (etiquetaCerrar !== undefined && (
+                  <BotonIcono icono={iconos.cerrar} etiqueta={etiquetaCerrar} tamano={32} onPress={onCerrar} />
+                ))}
+            </View>
           </View>
 
           <ScrollView
@@ -115,9 +156,10 @@ const styles = StyleSheet.create({
     backgroundColor: colores.fondo,
     borderTopLeftRadius: radios.xl,
     borderTopRightRadius: radios.xl,
-    paddingTop: espacios.xs,
     maxHeight: '90%',
   },
+  // La manija y el titulo: de donde se lo arrastra. El padding de arriba es parte, asi se agarra mas facil.
+  agarre: { paddingTop: espacios.xs },
   manija: {
     alignSelf: 'center',
     width: 36,
