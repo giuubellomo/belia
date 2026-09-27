@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { reglasDeLaRonda, puntajeDeReglaEnRonda } from '@/domain/rondas';
-import { mejoresDeRonda, puntajeCargado } from '@/domain/scoring';
+import { mejoresDeRonda, puntajeCargado, totalDeParticipante } from '@/domain/scoring';
 import type { Participante, Partida, Plantilla, RondaJugada } from '@/domain/types';
 import { conSigno, es } from '@/i18n/es';
 import { iconos } from '@/theme/iconos';
@@ -23,6 +23,7 @@ interface Props {
  * expandida, o bloqueada. La en juego (paso 7.2, RF-703, RF-704) muestra el
  * objetivo, lo que valen las reglas y una fila por participante con su puntaje
  * de la ronda, sin botones de regla: las reglas se marcan en el popup (7.4).
+ * A su derecha va el acumulado de la partida (paso 7.3, A-6).
  */
 export function TarjetaDeRonda({ ronda, partida, onTocarParticipante }: Props) {
   const titulo = es.ronda.titulo(ronda.numero);
@@ -68,6 +69,7 @@ export function TarjetaDeRonda({ ronda, partida, onTocarParticipante }: Props) {
           key={participante.id}
           participante={participante}
           puntaje={puntajeCargado(ronda, participante.id, partida.plantilla.modoPuntos)}
+          total={totalDeParticipante(partida, participante.id)}
           onPress={onTocarParticipante && (() => onTocarParticipante(participante.id))}
         />
       ))}
@@ -79,15 +81,17 @@ interface PropsFila {
   participante: Participante;
   /** null: todavia no cargo. */
   puntaje: number | null;
+  /** El acumulado de toda la partida, con esta ronda incluida (C-2). */
+  total: number;
   onPress?: () => void;
 }
 
 /**
  * Mockup 4 y 5: avatar, nombre y a la derecha la casilla con el puntaje de la
  * ronda. Sin cargar, la casilla queda punteada con una raya: un lugar vacio
- * que se toca para cargar.
+ * que se toca para cargar. A-6: el acumulado a la derecha, mas chico y en gris.
  */
-function FilaDeParticipante({ participante, puntaje, onPress }: PropsFila) {
+function FilaDeParticipante({ participante, puntaje, total, onPress }: PropsFila) {
   const vacia = puntaje === null;
   const valor = vacia ? es.partida.sinCargar : conSigno(puntaje);
   const contenido = (
@@ -99,9 +103,10 @@ function FilaDeParticipante({ participante, puntaje, onPress }: PropsFila) {
           {vacia ? iconos.raya : valor}
         </Text>
       </View>
+      <Text style={[styles.total, numerales]}>{conSigno(total)}</Text>
     </>
   );
-  const etiqueta = es.partida.puntajeDe(participante.nombre, valor);
+  const etiqueta = es.partida.puntajeDe(participante.nombre, valor, conSigno(total));
 
   if (onPress === undefined) {
     return (
@@ -189,4 +194,6 @@ const styles = StyleSheet.create({
   casillaVacia: { borderStyle: 'dashed', borderColor: colores.linea },
   puntaje: { ...tipografia.cuerpoFuerte, color: colores.tinta },
   puntajeVacio: { color: colores.grisMedio },
+  // Ancho fijo: los totales quedan en columna aunque cambie la cantidad de digitos.
+  total: { ...tipografia.secundario, color: colores.grisOscuro, minWidth: 44, textAlign: 'right' },
 });

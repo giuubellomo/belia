@@ -208,8 +208,8 @@ export const es = {
     /** Resumen de una ronda cerrada sin objetivo ni reglas: «Mejor puntaje: Ana (+30)». */
     mejorPuntaje: (nombres: string[], puntos: number) => `Mejor puntaje: ${nombres.join(' y ')} (${conSigno(puntos)})`,
     sinCargar: 'Sin cargar',
-    /** Lo que lee el lector de pantalla en la fila de un participante: «Ana: −20», «Ana: Sin cargar». */
-    puntajeDe: (nombre: string, puntaje: string) => `${nombre}: ${puntaje}`,
+    /** Lo que lee el lector de pantalla en la fila de un participante: «Ana: −20, total −50». */
+    puntajeDe: (nombre: string, puntaje: string, total: string) => `${nombre}: ${puntaje}, total ${total}`,
     // RF-706 / RF-707: por que no se puede cerrar la ronda
     faltanPuntajes: 'Falta cargar el puntaje de todos',
     faltanReglas: (reglas: string[]) => `Falta asignar: ${reglas.join(', ')}`,

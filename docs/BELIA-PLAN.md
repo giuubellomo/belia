@@ -80,7 +80,7 @@ cambiala **acá** antes de empezar, no a mitad de camino.
 | A-3 | No se elige la cantidad de rondas al armar la partida: se duplica la plantilla y se le sacan rondas. | Provisional |
 | A-4 | ~~Nombre por defecto de la partida: `Partida del <d/m>`. Editable.~~ Desde el paso 7.1 (cambio 71): el nombre se escribe al armar la partida, es obligatorio y no se edita después. | **Cerrada** |
 | A-5 | Una sola partida en curso a la vez. Con una partida abierta, «Nuevo juego» sigue visible pero pide confirmación para terminar la anterior. | **Cerrada para el MVP** |
-| A-6 | El acumulado va en la fila del participante, a la derecha del puntaje de la ronda, más chico y en gris. | Provisional — **es un cambio de diseño, confirmalo antes del paso 7.3** |
+| A-6 | El acumulado va en la fila del participante, a la derecha del puntaje de la ronda, más chico y en gris. | Confirmado por la usuaria el 27/9/2026, al empezar el paso 7.3. |
 
 ---
 
@@ -906,10 +906,15 @@ escribiendo una suma dentro de un componente, está mal.
   Verificado en el teléfono con las casillas vacías: la llena recién se puede ver en el 7.4,
   sin datos de prueba en la base.
 
-- [ ] **7.3 — Acumulado** (RF-710, A-6)
+- [x] **7.3 — Acumulado** (RF-710, A-6)
 
   **Confirmá A-6 antes de hacer este paso.** La opción provisional es mostrar el total a la
   derecha del puntaje de la ronda, más chico y en gris.
+
+  **Cómo quedó:** A-6 confirmada tal cual. El total va a la derecha de la casilla, en gris y
+  con ancho fijo para que quede en columna; sale de `totalDeParticipante` e incluye la ronda
+  en juego. Verificado en el teléfono con los totales en 0: que cambien al cargar se ve en el
+  checkpoint del 7.4.
 
 - [ ] **7.4 — Popup de carga** (RF-705)
 
