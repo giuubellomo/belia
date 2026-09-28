@@ -1080,6 +1080,33 @@ escribiendo una suma dentro de un componente, está mal.
 
 ---
 
+# Fase 10 — Versión web
+
+Agregada el 27/9/2026 (registro, cambio 86): en lugar de la app instalable, una versión web
+del mismo proyecto. En el iPhone se instala con «Compartir → Agregar a inicio», sin cuenta
+de Apple. Los datos quedan en cada navegador: sin sincronizar (fase 2).
+
+- [x] **10.1 — Levantarla en la Mac**
+
+  `react-native-web` y `@expo/metro-runtime`, Metro sirviendo `.wasm`, y ver qué se rompe
+  con `npx expo start --web`.
+
+  **Cómo quedó** (ver registro, cambio 86): lo único que se rompió fueron las migraciones
+  (`withExclusiveTransactionAsync` no existe en web). Probado en Chrome: armado, carga con
+  el popup, y los datos siguen al recargar la página. Verificado por la usuaria en la Mac.
+
+- [ ] **10.2 — Arreglar lo que aparezca y probarla en Safari del iPhone**
+
+  Recorrer todas las pantallas en el navegador. Ícono, nombre y colores para «Agregar a
+  inicio» (resuelve lo pendiente del cambio 85 para la web).
+
+- [ ] **10.3 — Publicarla**
+
+  Elegir hosting y publicar el `npx expo export -p web`. **Se consulta antes**: es poner la
+  app en internet.
+
+---
+
 ## Convenciones
 
 - **Nada de lógica de puntaje fuera de `src/domain`.** Los componentes muestran lo que el
@@ -1292,3 +1319,4 @@ Durante el paso 7.1 (estructura de la pantalla):
 | 83 | Eliminar una regla o una ronda en el editor pide confirmación: el «Eliminar» se reemplaza, en el mismo lugar, por la pregunta con Cancelar y Eliminar (`Eliminar.tsx`, que reúne los tres «Eliminar» al pie). **Un jugador del armado se saca sin preguntar**, aunque el RNF-6 nombre «borrar participante». | Decisión de la usuaria. Desde el cambio 65 el jugador no está guardado y se recupera volviéndolo a agregar; se probó con pregunta y no le gustó. En el lugar y no en otro popup porque en iOS un Modal no se abre encima de otro. |
 | 84 | Los bottom sheets se cierran deslizando hacia abajo desde la manija o el título, con `PanResponder` de React Native (sin dependencias nuevas). Pasados 120 puntos, o soltando rápido, se cierran; si no, vuelven. Cerrar así no guarda, igual que tocar afuera. | Lo pidió la usuaria al probar el 9.3. `BottomSheet` decía que hacía falta una librería de gestos; no hace falta. No se toma desde el contenido, para no pelear con su scroll. |
 | 85 | **Pendiente para el build: la splash y el ícono.** En Expo Go no se ve la splash (muestra el ícono), y `assets/splash-icon.png` y el ícono son los de ejemplo de la plantilla de Expo. Se configuran con `expo-splash-screen` cuando se arme la app instalable. | Decisión de la usuaria. Los 4 segundos de arranque en Expo Go son casi todos de bajar el código desde la Mac: una pantalla de carga de la app aparecería recién al final. |
+| 86 | **Fase 10 nueva: versión web**, en el mismo proyecto. Se sumaron `react-native-web` y `@expo/metro-runtime` y un `metro.config.js` que sirve `.wasm`. Las migraciones usan `BEGIN`/`COMMIT` sobre la conexión principal, como `escribir`: `withExclusiveTransactionAsync` no existe en web. Sin los headers COEP/COOP que pide la doc: `expo-sqlite` solo los necesita para operaciones sincrónicas, y la app usa solo asincrónicas. | Decisión de la usuaria en lugar de la app instalable: sin cuenta de Apple ni Xcode. Un proyecto aparte duplicaría todo el código. La base en web está en alfa según la doc de v57. |

@@ -57,12 +57,19 @@ export async function migrar(db: SQLiteDatabase): Promise<Migracion[]> {
 
   const pendientes = MIGRACIONES.filter((m) => m.version > desde).sort((a, b) => a.version - b.version);
 
+  // BEGIN/COMMIT a mano sobre la misma conexion, como `escribir` en client.ts:
+  // withExclusiveTransactionAsync no existe en web (fase 10, cambio 86).
   for (const migracion of pendientes) {
-    await db.withExclusiveTransactionAsync(async (txn) => {
-      await txn.execAsync(migracion.sql);
+    await db.execAsync('BEGIN IMMEDIATE');
+    try {
+      await db.execAsync(migracion.sql);
       // user_version no acepta parametros: va interpolado. El valor es nuestro, no del usuario.
-      await txn.execAsync(`PRAGMA user_version = ${migracion.version}`);
-    });
+      await db.execAsync(`PRAGMA user_version = ${migracion.version}`);
+      await db.execAsync('COMMIT');
+    } catch (error) {
+      await db.execAsync('ROLLBACK');
+      throw error;
+    }
   }
 
   return pendientes;
