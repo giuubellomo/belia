@@ -31,6 +31,22 @@ export const MIGRACIONES: Migracion[] = [
     nombre: 'reglas de una sola ronda',
     sql: 'ALTER TABLE regla_plantilla ADD COLUMN solo_en_ronda INTEGER CHECK (solo_en_ronda >= 1);',
   },
+  {
+    // Cambio 89: las rondas 4 a 6 de Karioka estaban en otro orden. La semilla solo
+    // inserta la primera vez, asi que la Karioka ya guardada se corrige aca. Los
+    // puntajes van con el numero de ronda y no se tocan. Las copias son de la
+    // usuaria y las partidas guardan su propio snapshot: no se tocan. En una base
+    // nueva no hay filas todavia y no hace nada.
+    version: 3,
+    nombre: 'orden de las rondas de Karioka',
+    sql: `UPDATE ronda_plantilla
+      SET objetivo = CASE numero
+        WHEN 4 THEN '2 piernas + 1 escalera'
+        WHEN 5 THEN '1 pierna + 2 escaleras'
+        WHEN 6 THEN '3 piernas'
+      END
+      WHERE plantilla_id = 'ef056daf-4cba-4370-81b9-0568005c3bcb' AND numero IN (4, 5, 6);`,
+  },
 ];
 
 /** La version mas alta que conoce este build. */

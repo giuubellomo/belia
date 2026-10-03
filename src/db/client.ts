@@ -8,6 +8,7 @@
 import * as SQLite from 'expo-sqlite';
 
 import { migrar, versionActual, VERSION_OBJETIVO } from './migrations';
+import { esperarTurno } from './turno';
 
 export const NOMBRE_BASE = 'belia.db';
 
@@ -26,16 +27,37 @@ export function obtenerBase(): Promise<SQLite.SQLiteDatabase> {
 }
 
 async function abrir(): Promise<SQLite.SQLiteDatabase> {
+  // En web, esperar a que otra pagina suelte la base (cambio 87).
+  if (!(await esperarTurno())) throw new Error(`NoModificationAllowedError: ${NOMBRE_BASE} esta abierta en otra pestaña`);
+  return abrirUnaVez();
+}
+
+async function abrirUnaVez(): Promise<SQLite.SQLiteDatabase> {
   const db = await SQLite.openDatabaseAsync(NOMBRE_BASE);
 
-  // Fuera de transaccion y antes de migrar: journal_mode no cambia dentro de una,
-  // y foreign_keys se ignora en silencio si se setea con una transaccion abierta.
-  await db.execAsync('PRAGMA journal_mode = WAL');
-  await db.execAsync('PRAGMA foreign_keys = ON');
+  try {
+    // Fuera de transaccion y antes de migrar: journal_mode no cambia dentro de una,
+    // y foreign_keys se ignora en silencio si se setea con una transaccion abierta.
+    await db.execAsync('PRAGMA journal_mode = WAL');
+    await db.execAsync('PRAGMA foreign_keys = ON');
 
-  await migrar(db);
+    await migrar(db);
+  } catch (error) {
+    // Si falla despues de abrir, se cierra: el reintento no puede chocar consigo mismo.
+    await db.closeAsync().catch(() => undefined);
+    throw error;
+  }
 
   return db;
+}
+
+/**
+ * Web (fase 10, cambio 87): SQLite toma el archivo de la base de forma exclusiva
+ * en el navegador, asi que una segunda pestaña con la app no la puede abrir.
+ * Llega como un NoModificationAllowedError del almacenamiento del navegador.
+ */
+export function esBaseAbiertaEnOtraPestana(error: unknown): boolean {
+  return String(error).includes('NoModificationAllowedError');
 }
 
 /*

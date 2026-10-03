@@ -33,6 +33,8 @@ export const es = {
     restar: 'Restar',
     puntos: (n: number) => `${conSigno(n)} pts`,
     errorGuardar: 'No se pudo guardar. Probá de nuevo.',
+    /** Web (cambio 87): la base solo se abre en una pestaña a la vez. */
+    abiertaEnOtraPestana: 'BELIA ya está abierta en otra pestaña. Cerrala y recargá esta.',
   },
 
   home: {

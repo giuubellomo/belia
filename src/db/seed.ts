@@ -24,9 +24,9 @@ const RONDAS_KARIOKA: Array<[objetivo: string, puntaje: number]> = [
   ['2 piernas', -10],
   ['1 pierna + 1 escalera', -20],
   ['2 escaleras', -30],
-  ['3 piernas', -40],
-  ['2 piernas + 1 escalera', -50],
-  ['1 pierna + 2 escaleras', -60],
+  ['2 piernas + 1 escalera', -40],
+  ['1 pierna + 2 escaleras', -50],
+  ['3 piernas', -60],
   ['3 escaleras', -70],
 ];
 

@@ -583,9 +583,9 @@ pegar botones.
   | 1 | 2 piernas | −10 |
   | 2 | 1 pierna + 1 escalera | −20 |
   | 3 | 2 escaleras | −30 |
-  | 4 | 3 piernas | −40 |
-  | 5 | 2 piernas + 1 escalera | −50 |
-  | 6 | 1 pierna + 2 escaleras | −60 |
+  | 4 | 2 piernas + 1 escalera | −40 |
+  | 5 | 1 pierna + 2 escaleras | −50 |
+  | 6 | 3 piernas | −60 |
   | 7 | 3 escaleras | −70 |
 
   **Simple** — `modoPuntos: 'suma'`, `criterioVictoria: 'mayor'`, `rondasIlimitadas: true`,
@@ -1105,6 +1105,10 @@ de Apple. Los datos quedan en cada navegador: sin sincronizar (fase 2).
   Elegir hosting y publicar el `npx expo export -p web`. **Se consulta antes**: es poner la
   app en internet.
 
+  **Se adelantó al 10.2** (ver registro, cambio 88): GitHub Pages, en
+  https://giuubellomo.github.io/belia/. Para probar en Safari del iPhone hace falta HTTPS,
+  y publicada ya lo tiene.
+
 ---
 
 ## Convenciones
@@ -1320,3 +1324,6 @@ Durante el paso 7.1 (estructura de la pantalla):
 | 84 | Los bottom sheets se cierran deslizando hacia abajo desde la manija o el título, con `PanResponder` de React Native (sin dependencias nuevas). Pasados 120 puntos, o soltando rápido, se cierran; si no, vuelven. Cerrar así no guarda, igual que tocar afuera. | Lo pidió la usuaria al probar el 9.3. `BottomSheet` decía que hacía falta una librería de gestos; no hace falta. No se toma desde el contenido, para no pelear con su scroll. |
 | 85 | **Pendiente para el build: la splash y el ícono.** En Expo Go no se ve la splash (muestra el ícono), y `assets/splash-icon.png` y el ícono son los de ejemplo de la plantilla de Expo. Se configuran con `expo-splash-screen` cuando se arme la app instalable. | Decisión de la usuaria. Los 4 segundos de arranque en Expo Go son casi todos de bajar el código desde la Mac: una pantalla de carga de la app aparecería recién al final. |
 | 86 | **Fase 10 nueva: versión web**, en el mismo proyecto. Se sumaron `react-native-web` y `@expo/metro-runtime` y un `metro.config.js` que sirve `.wasm`. Las migraciones usan `BEGIN`/`COMMIT` sobre la conexión principal, como `escribir`: `withExclusiveTransactionAsync` no existe en web. Sin los headers COEP/COOP que pide la doc: `expo-sqlite` solo los necesita para operaciones sincrónicas, y la app usa solo asincrónicas. | Decisión de la usuaria en lugar de la app instalable: sin cuenta de Apple ni Xcode. Un proyecto aparte duplicaría todo el código. La base en web está en alfa según la doc de v57. |
+| 87 | Ajustes para web: (1) la base se abre en una sola pestaña a la vez; `turno.web.ts` espera hasta 3 s un Web Lock antes de abrirla (al recargar, la página anterior tarda en soltarla, y si expo-sqlite falla su worker queda roto) y, si sigue ocupada, la app dice «BELIA ya está abierta en otra pestaña». (2) `unstable_settings.anchor = 'index'`: el Home queda siempre debajo, así hay atrás aunque se recargue una pantalla interna. (3) Las cards de plantilla, regla y ronda ya no son tocables enteras: en web un botón no puede ir dentro de otro; se toca la parte de los textos. (4) Ícono propio: cuadrado #1C1C1E con «B» blanca (`scripts/generar-icono.swift`), también en `assets/icon.png`. (5) `public/index.html` con los meta de «Agregar a inicio» y `public/manifest.json`. | Lo encontrado al recorrer la web en el paso 10.2. El ícono lo eligió la usuaria entre armar uno simple o pasar un diseño; resuelve el ícono del cambio 85 (la splash sigue pendiente para un build nativo). |
+| 88 | **Publicada en GitHub Pages** (https://giuubellomo.github.io/belia/), con el repo hecho público. `.github/workflows/pages.yml` exporta y publica en cada push a `main`, y copia `index.html` como `404.html` para que recargar una pantalla interna abra la app. Como Pages la sirve en `/belia`, `app.json` lleva `experiments.baseUrl: "/belia"`, y `public/index.html` y `public/manifest.json` apuntan ahí. Se usa GitHub Actions en lugar del paquete `gh-pages` que sugiere la guía de Expo: no suma dependencias y no hace falta `.nojekyll`. | Decisión de la usuaria: subirla para probarla en el iPhone y que quede publicada. En Safari, la base (OPFS) y los Web Locks solo andan con HTTPS, y la IP de la Mac por Wi-Fi no lo tiene. Con la cuenta gratis, Pages pide repo público; ella eligió eso antes que pagar Pro o usar otro hosting. |
+| 89 | **Orden de las rondas de Karioka:** 2 piernas, 1 pierna + 1 escalera, 2 escaleras, 2 piernas + 1 escalera, 1 pierna + 2 escaleras, 3 piernas, 3 escaleras. Se corrigió `seed.ts` (y la tabla del paso 2.4), y la migración 3 corrige los objetivos de las rondas 4 a 6 en la Karioka predefinida que ya está guardada. Los puntajes siguen con el número de ronda (−40, −50, −60). No se tocan las copias ni las partidas, que guardan su snapshot. | Lo pidió la usuaria antes de publicar la web. La semilla inserta las predefinidas solo la primera vez: sin la migración, el teléfono y el Chrome de la Mac se quedaban con el orden viejo. |

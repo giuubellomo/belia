@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { puntajeDeReglaEnRonda, reglasDeLaRonda } from '@/domain/rondas';
 import type { Plantilla, RondaDefinida } from '@/domain/types';
@@ -65,8 +65,15 @@ function FilaDeRonda({ ronda, plantilla, ultima, onEditar, onMover }: FilaProps)
   const titulo = ronda.objetivo ?? es.ronda.sinObjetivo;
 
   return (
-    <Card onPress={onEditar} etiqueta={`${es.ronda.titulo(ronda.numero)}. ${titulo}`} style={styles.fila}>
-      <View style={styles.textos}>
+    // Como la fila de regla: la card no es tocable entera porque las flechas son
+    // botones, y en web un boton no puede ir adentro de otro (cambio 87).
+    <Card style={styles.fila}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${es.ronda.titulo(ronda.numero)}. ${titulo}`}
+        onPress={onEditar}
+        style={({ pressed }) => [styles.textos, pressed && styles.presionada]}
+      >
         <View style={styles.encabezado}>
           <View style={styles.numero}>
             <Text style={[styles.numeroTexto, numerales]}>{ronda.numero}</Text>
@@ -85,7 +92,7 @@ function FilaDeRonda({ ronda, plantilla, ultima, onEditar, onMover }: FilaProps)
             />
           ))}
         </View>
-      </View>
+      </Pressable>
 
       <View style={styles.flechas}>
         <BotonIcono
@@ -128,4 +135,5 @@ const styles = StyleSheet.create({
   sinObjetivo: { color: colores.grisMedio },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: espacios.xxs },
   flechas: { gap: espacios.xxs },
+  presionada: { opacity: 0.7 },
 });

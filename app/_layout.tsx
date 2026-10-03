@@ -2,8 +2,18 @@ import { Stack } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { esBaseAbiertaEnOtraPestana } from '@/db/client';
 import { sembrar } from '@/db/seed';
 import { es } from '@/i18n/es';
+import { colores, espacios, tipografia } from '@/theme/tokens';
+
+/**
+ * El Home queda siempre debajo en la pila, aunque se entre directo a otra ruta.
+ * En web pasa al recargar una pantalla interna: sin esto no habria a donde
+ * volver, y con la app agregada a inicio no hay boton atras del navegador
+ * (fase 10, cambio 87).
+ */
+export const unstable_settings = { anchor: 'index' };
 
 /**
  * Antes de montar cualquier pantalla se siembran las plantillas predefinidas
@@ -11,16 +21,20 @@ import { es } from '@/i18n/es';
  */
 export default function RootLayout() {
   const [lista, setLista] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
 
   useEffect(() => {
     sembrar()
       .then(() => setLista(true))
-      .catch((e: unknown) => setError(String(e)));
+      .catch((e: unknown) => setError(e ?? 'Error'));
   }, []);
 
+  // En web, la app ya abierta en otra pestaña: un aviso para la usuaria, no un error.
+  if (error !== null && esBaseAbiertaEnOtraPestana(error)) {
+    return <PantallaError mensaje={es.comun.abiertaEnOtraPestana} />;
+  }
   // Diagnostico de desarrollo: si la semilla falla, la app no sirve y hay que verlo.
-  if (error !== null) return <PantallaError mensaje={error} />;
+  if (error !== null) return <PantallaError mensaje={String(error)} />;
 
   // Es un instante: una lectura y, solo la primera vez, dos inserciones.
   if (!lista) return null;
@@ -51,11 +65,12 @@ function Navegacion() {
 function PantallaError({ mensaje }: { mensaje: string }) {
   return (
     <View style={styles.error}>
-      <Text>{mensaje}</Text>
+      <Text style={styles.mensaje}>{mensaje}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  error: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  error: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: espacios.xl, backgroundColor: colores.fondo },
+  mensaje: { ...tipografia.cuerpo, color: colores.tinta, textAlign: 'center' },
 });

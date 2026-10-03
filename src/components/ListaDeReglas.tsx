@@ -1,9 +1,9 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { Regla } from '@/domain/types';
 import { conSigno, es } from '@/i18n/es';
 import { iconos } from '@/theme/iconos';
-import { colores, espacios, tipografia } from '@/theme/tokens';
+import { AREA_TOCABLE_MINIMA, colores, espacios, tipografia } from '@/theme/tokens';
 
 import { BotonIcono } from './BotonIcono';
 import { Card } from './Card';
@@ -57,20 +57,29 @@ interface FilaProps {
 
 function FilaDeRegla({ regla, primera, ultima, onEditar, onMover }: FilaProps) {
   return (
-    <Card onPress={onEditar} etiqueta={`${regla.titulo}. ${es.comun.puntos(regla.puntajeBase)}`} style={styles.fila}>
-      <View style={styles.textos}>
-        <Text style={styles.titulo}>{regla.titulo}</Text>
-        <View style={styles.etiquetas}>
-          <Chip
-            texto={regla.alcance === 'todas' ? es.regla.enTodasLasRondas : es.regla.opcional}
-            punto={regla.alcance === 'todas' ? 'lleno' : 'vacio'}
-          />
-          {/* Lo comun es que se la lleve una sola persona: se marca la excepcion. */}
-          {!regla.asignacionUnica && <Chip texto={es.regla.varias} variante="borde" />}
+    // La card no es tocable entera: las flechas son botones y en web un boton no
+    // puede ir adentro de otro (cambio 87). Se toca la parte de los textos.
+    <Card style={styles.fila}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${regla.titulo}. ${es.comun.puntos(regla.puntajeBase)}`}
+        onPress={onEditar}
+        style={({ pressed }) => [styles.editar, pressed && styles.presionada]}
+      >
+        <View style={styles.textos}>
+          <Text style={styles.titulo}>{regla.titulo}</Text>
+          <View style={styles.etiquetas}>
+            <Chip
+              texto={regla.alcance === 'todas' ? es.regla.enTodasLasRondas : es.regla.opcional}
+              punto={regla.alcance === 'todas' ? 'lleno' : 'vacio'}
+            />
+            {/* Lo comun es que se la lleve una sola persona: se marca la excepcion. */}
+            {!regla.asignacionUnica && <Chip texto={es.regla.varias} variante="borde" />}
+          </View>
         </View>
-      </View>
 
-      <Chip valor={conSigno(regla.puntajeBase)} variante="borde" />
+        <Chip valor={conSigno(regla.puntajeBase)} variante="borde" />
+      </Pressable>
 
       <View style={styles.flechas}>
         <BotonIcono
@@ -100,4 +109,6 @@ const styles = StyleSheet.create({
   titulo: { ...tipografia.cuerpoFuerte, color: colores.tinta },
   etiquetas: { flexDirection: 'row', flexWrap: 'wrap', gap: espacios.xxs },
   flechas: { gap: espacios.xxs },
+  editar: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: espacios.sm, minHeight: AREA_TOCABLE_MINIMA },
+  presionada: { opacity: 0.7 },
 });

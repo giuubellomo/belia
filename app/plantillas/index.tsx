@@ -105,12 +105,15 @@ function FilaDePlantilla({ plantilla, onEditar, onDuplicar, onBorrar }: FilaProp
   );
 
   return (
-    <Card
-      onPress={onEditar}
-      etiqueta={`${plantilla.nombre}. ${resumen}`}
-      style={styles.card}
-    >
-      <View style={styles.fila}>
+    // La card no es tocable entera: Duplicar y Borrar son botones y en web un boton
+    // no puede ir adentro de otro (cambio 87). Se toca la fila del nombre.
+    <Card style={styles.card}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${plantilla.nombre}. ${resumen}`}
+        onPress={onEditar}
+        style={({ pressed }) => [styles.fila, pressed && styles.accionPresionada]}
+      >
         <Text allowFontScaling={false} style={styles.icono}>
           {iconoDePlantilla(plantilla.icono)}
         </Text>
@@ -125,7 +128,7 @@ function FilaDePlantilla({ plantilla, onEditar, onDuplicar, onBorrar }: FilaProp
             {iconos.adelante}
           </Text>
         )}
-      </View>
+      </Pressable>
 
       <View style={styles.acciones}>
         <Accion texto={es.plantillas.duplicar} onPress={onDuplicar} />
